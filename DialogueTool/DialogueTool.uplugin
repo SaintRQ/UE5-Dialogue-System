@@ -1,0 +1,22 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Dialogue Tool",
+	"Description": "Dialogue system for Alay.",
+	"Category": "ALAY",
+	"CanContainContent": true,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "DialogueTool",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "DialogueToolEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}

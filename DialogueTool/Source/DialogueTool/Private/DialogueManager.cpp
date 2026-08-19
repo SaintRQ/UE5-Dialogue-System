@@ -1,0 +1,564 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#include "DialogueManager.h"
+
+#include "DialogueAction.h"
+#include "DialogueCondition.h"
+#include "DialogueLibraryObject.h"
+#include "DialogueObject.h"
+#include "DialogueToolSettings.h"
+#include "Containers/StringConv.h"
+#include "Engine/World.h"
+
+void UDialogueManager::Deinitialize()
+{
+	ResetDialogueState();
+	Super::Deinitialize();
+}
+
+bool UDialogueManager::StartDialogue(UDialogueObject* dialogue, UObject* context)
+{
+	ResetDialogueState();
+	if (!dialogue || dialogue->IsA<UDialogueLibraryObject>() || !GetWorld())
+	{
+		return false;
+	}
+
+	ActiveDialogue = dialogue;
+	DialogueContext = context;
+	for (const FDialogueInit& init : dialogue->GetDialogueInitData())
+	{
+		if (AreConditionsMet(init.Conditions))
+		{
+			BeginActions(init.Actions, init.NextNode);
+			return true;
+		}
+	}
+
+	ResetDialogueState();
+	return false;
+}
+
+void UDialogueManager::ContinueDialogue()
+{
+	if (PlaybackState == EPlaybackState::TypingText)
+	{
+		GetWorld()->GetTimerManager().ClearTimer(TextTimerHandle);
+		CompleteCurrentTextReveal();
+		return;
+	}
+
+	if (PlaybackState != EPlaybackState::WaitingForContinue || !ActiveDialogue)
+	{
+		return;
+	}
+
+	const FDialogueNode* dialogueNode = ActiveDialogue->FindDialogueNode(CurrentNodeId);
+	if (!dialogueNode)
+	{
+		ShowEndResponse();
+		return;
+	}
+
+	++CurrentTextIndex;
+	if (dialogueNode->RootText.IsValidIndex(CurrentTextIndex))
+	{
+		StartCurrentText();
+	}
+	else
+	{
+		CompleteCurrentTopic();
+	}
+}
+
+void UDialogueManager::SelectResponse(int32 responseIndex)
+{
+	if (PlaybackState != EPlaybackState::WaitingForResponse
+		|| !CurrentResponses.IsValidIndex(responseIndex)
+		|| CurrentResponses[responseIndex].Visibility != EDialogueConditionVisibilityResult::VisibleSuccess)
+	{
+		return;
+	}
+
+	const FDialogueResponse response = CurrentResponses[responseIndex];
+	CurrentResponses.Reset();
+	OnUpdateResponses.Broadcast(CurrentResponses);
+	BeginActions(response.Actions, response.NextNode, response.FinishDialogue);
+}
+
+void UDialogueManager::FinishDialogue()
+{
+	if (!ActiveDialogue)
+	{
+		return;
+	}
+
+	ResetDialogueState();
+	OnDialogueFinished.Broadcast();
+}
+
+bool UDialogueManager::IsWaitingForContinue() const
+{
+	return PlaybackState == EPlaybackState::WaitingForContinue;
+}
+
+bool UDialogueManager::AreConditionsMet(
+	const TArray<TObjectPtr<UDialogueCondition>>& conditions) const
+{
+	UObject* context = GetExecutionContext();
+	for (UDialogueCondition* condition : conditions)
+	{
+		if (condition && !condition->ExecuteCondition(context))
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+UObject* UDialogueManager::GetExecutionContext() const
+{
+	return DialogueContext.IsValid() ? DialogueContext.Get() : GetGameInstance();
+}
+
+void UDialogueManager::StartCurrentText()
+{
+	const FDialogueNode* dialogueNode = ActiveDialogue
+		? ActiveDialogue->FindDialogueNode(CurrentNodeId)
+		: nullptr;
+	if (!dialogueNode || !dialogueNode->RootText.IsValidIndex(CurrentTextIndex))
+	{
+		CompleteCurrentTopic();
+		return;
+	}
+
+	CurrentSourceText = dialogueNode->RootText[CurrentTextIndex];
+	CurrentSourceString = CurrentSourceText.ToString();
+	CurrentRevealOffsets.Reset();
+	CurrentRevealOpenTags.Reset();
+	int32 openTags = 0;
+	for (int32 index = 0; index < CurrentSourceString.Len();)
+	{
+		if (CurrentSourceString[index] == TEXT('<'))
+		{
+			const int32 tagEnd = CurrentSourceString.Find(
+				TEXT(">"),
+				ESearchCase::CaseSensitive,
+				ESearchDir::FromStart,
+				index + 1);
+			if (tagEnd != INDEX_NONE)
+			{
+				int32 tagLastCharacter = tagEnd - 1;
+				while (tagLastCharacter > index && FChar::IsWhitespace(CurrentSourceString[tagLastCharacter]))
+				{
+					--tagLastCharacter;
+				}
+
+				if (index + 1 < tagEnd && CurrentSourceString[index + 1] == TEXT('/'))
+				{
+					openTags = FMath::Max(0, openTags - 1);
+				}
+				else if (CurrentSourceString[tagLastCharacter] != TEXT('/'))
+				{
+					++openTags;
+				}
+
+				index = tagEnd + 1;
+				continue;
+			}
+		}
+
+		int32 characterLength = 1;
+		if (CurrentSourceString[index] == TEXT('&'))
+		{
+			static constexpr const TCHAR* escapeSequences[] = {
+				TEXT("&quot;"),
+				TEXT("&lt;"),
+				TEXT("&gt;"),
+				TEXT("&amp;")
+			};
+			for (const TCHAR* escapeSequence : escapeSequences)
+			{
+				const int32 escapeLength = FCString::Strlen(escapeSequence);
+				if (CurrentSourceString.Mid(index, escapeLength).Equals(escapeSequence, ESearchCase::CaseSensitive))
+				{
+					characterLength = escapeLength;
+					break;
+				}
+			}
+		}
+		else if (StringConv::IsHighSurrogate(CurrentSourceString[index])
+			&& CurrentSourceString.IsValidIndex(index + 1)
+			&& StringConv::IsLowSurrogate(CurrentSourceString[index + 1]))
+		{
+			characterLength = 2;
+		}
+
+		index += characterLength;
+		CurrentRevealOffsets.Add(index);
+		CurrentRevealOpenTags.Add(openTags);
+	}
+
+	RevealedCharacters = 0;
+	const int32 charactersPerSecond = GetDefault<UDialogueToolSettings>()->CharactersPerSecond;
+	if (charactersPerSecond <= 0 || CurrentRevealOffsets.IsEmpty())
+	{
+		CompleteCurrentTextReveal();
+		return;
+	}
+
+	PlaybackState = EPlaybackState::TypingText;
+	UpdateCurrentText();
+	if (PlaybackState == EPlaybackState::TypingText)
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			TextTimerHandle,
+			this,
+			&UDialogueManager::UpdateCurrentText,
+			1.0f / static_cast<float>(charactersPerSecond),
+			true);
+	}
+}
+
+void UDialogueManager::UpdateCurrentText()
+{
+	if (PlaybackState != EPlaybackState::TypingText)
+	{
+		return;
+	}
+
+	RevealedCharacters = FMath::Min(RevealedCharacters + 1, CurrentRevealOffsets.Num());
+	if (RevealedCharacters >= CurrentRevealOffsets.Num())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(TextTimerHandle);
+		CompleteCurrentTextReveal();
+		return;
+	}
+
+	const int32 revealIndex = RevealedCharacters - 1;
+	FString revealedText = CurrentSourceString.Left(CurrentRevealOffsets[revealIndex]);
+	revealedText.Reserve(revealedText.Len() + CurrentRevealOpenTags[revealIndex] * 3);
+	for (int32 index = 0; index < CurrentRevealOpenTags[revealIndex]; ++index)
+	{
+		revealedText.Append(TEXT("</>"));
+	}
+	OnUpdateText.Broadcast(FText::FromString(MoveTemp(revealedText)));
+}
+
+void UDialogueManager::CompleteCurrentTextReveal()
+{
+	RevealedCharacters = CurrentRevealOffsets.Num();
+	PlaybackState = EPlaybackState::WaitingForContinue;
+	OnUpdateText.Broadcast(CurrentSourceText);
+
+	const FDialogueNode* dialogueNode = ActiveDialogue
+		? ActiveDialogue->FindDialogueNode(CurrentNodeId)
+		: nullptr;
+	if (dialogueNode
+		&& CurrentTextIndex == dialogueNode->RootText.Num() - 1
+		&& !dialogueNode->Response.IsEmpty())
+	{
+		CompleteCurrentTopic();
+	}
+}
+
+void UDialogueManager::CompleteCurrentTopic()
+{
+	const FDialogueNode* dialogueNode = ActiveDialogue
+		? ActiveDialogue->FindDialogueNode(CurrentNodeId)
+		: nullptr;
+	if (!dialogueNode)
+	{
+		ShowEndResponse();
+		return;
+	}
+
+	if (!dialogueNode->Response.IsEmpty())
+	{
+		PublishResponses(dialogueNode->Response);
+		return;
+	}
+
+	BeginActions(dialogueNode->Actions, dialogueNode->NextNode);
+}
+
+void UDialogueManager::AdvanceToNode(int64 nodeId)
+{
+	TSet<int64> visitedSwitchers;
+	while (ActiveDialogue)
+	{
+		if (nodeId == DialogueFinishNodeId)
+		{
+			CompleteActiveDialogue();
+			return;
+		}
+
+		if (nodeId <= 0)
+		{
+			break;
+		}
+
+		if (const FDialogueNode* dialogueNode = ActiveDialogue->FindDialogueNode(nodeId))
+		{
+			CurrentNodeId = nodeId;
+			CurrentTextIndex = 0;
+			if (dialogueNode->RootText.IsEmpty())
+			{
+				CompleteCurrentTopic();
+			}
+			else
+			{
+				StartCurrentText();
+			}
+			return;
+		}
+
+		const FDialogueSwitcher* switcher = ActiveDialogue->FindDialogueSwitcher(nodeId);
+		if (switcher)
+		{
+			if (visitedSwitchers.Contains(nodeId))
+			{
+				break;
+			}
+
+			visitedSwitchers.Add(nodeId);
+			const FDialogueSwitcherCondition* selectedCondition = switcher->Conditions.FindByPredicate(
+				[this](const FDialogueSwitcherCondition& condition)
+				{
+					return AreConditionsMet(condition.Conditions);
+				});
+			if (!selectedCondition)
+			{
+				break;
+			}
+
+			if (selectedCondition->Actions.ContainsByPredicate(
+				[](const TObjectPtr<UDialogueAction>& action)
+				{
+					return action != nullptr;
+				}))
+			{
+				BeginActions(selectedCondition->Actions, selectedCondition->NextNode);
+				return;
+			}
+
+			nodeId = selectedCondition->NextNode;
+			continue;
+		}
+
+		if (const FDialogueTransit* transit = ActiveDialogue->FindDialogueTransit(nodeId))
+		{
+			if (EnterDialogueLibrary(*transit))
+			{
+				return;
+			}
+
+			BeginActions(transit->ReturnActions, transit->ReturnNode);
+			return;
+		}
+
+		break;
+	}
+
+	ShowEndResponse();
+}
+
+bool UDialogueManager::EnterDialogueLibrary(const FDialogueTransit& transit)
+{
+	UDialogueLibraryObject* dialogueLibrary = transit.DialogueLibrary;
+	if (!dialogueLibrary || ActiveDialogue->IsA<UDialogueLibraryObject>())
+	{
+		return false;
+	}
+
+	const FDialogueInit* selectedInit = dialogueLibrary->GetDialogueInitData().FindByPredicate(
+		[this](const FDialogueInit& init)
+		{
+			return AreConditionsMet(init.Conditions);
+		});
+	if (!selectedInit)
+	{
+		return false;
+	}
+
+	PreviousDialogue = ActiveDialogue;
+	PreviousReturnActions = transit.ReturnActions;
+	PreviousReturnNodeId = transit.ReturnNode;
+	ActiveDialogue = dialogueLibrary;
+	BeginActions(selectedInit->Actions, selectedInit->NextNode);
+	return true;
+}
+
+void UDialogueManager::CompleteActiveDialogue()
+{
+	if (!ActiveDialogue || !ActiveDialogue->IsA<UDialogueLibraryObject>() || !PreviousDialogue)
+	{
+		FinishDialogue();
+		return;
+	}
+
+	ActiveDialogue = PreviousDialogue;
+	PreviousDialogue = nullptr;
+	const int64 returnNodeId = PreviousReturnNodeId;
+	PreviousReturnNodeId = -1;
+	TArray<TObjectPtr<UDialogueAction>> returnActions = MoveTemp(PreviousReturnActions);
+	BeginActions(returnActions, returnNodeId);
+}
+
+void UDialogueManager::PublishResponses(const TArray<FDialogueResponse>& responses)
+{
+	CurrentResponses.Reset(responses.Num());
+	const auto addResponse = [this](const FDialogueResponse& response)
+	{
+		FDialogueResponse& currentResponse = CurrentResponses.Add_GetRef(response);
+		if (response.FinishDialogue)
+		{
+			const UDialogueToolSettings* settings = GetDefault<UDialogueToolSettings>();
+			currentResponse.Response = ActiveDialogue && ActiveDialogue->IsA<UDialogueLibraryObject>()
+				? settings->ResponseReturnDialogueText
+				: settings->ResponseEndDialogueText;
+			currentResponse.AlwaysVisible = true;
+			currentResponse.Visibility = EDialogueConditionVisibilityResult::VisibleSuccess;
+			return;
+		}
+
+		if (AreConditionsMet(response.Conditions))
+		{
+			currentResponse.Visibility = EDialogueConditionVisibilityResult::VisibleSuccess;
+		}
+		else
+		{
+			currentResponse.Visibility = response.AlwaysVisible
+				? EDialogueConditionVisibilityResult::VisibleFailure
+				: EDialogueConditionVisibilityResult::Invisible;
+		}
+	};
+
+	for (const FDialogueResponse& response : responses)
+	{
+		if (!response.FinishDialogue)
+		{
+			addResponse(response);
+		}
+	}
+	for (const FDialogueResponse& response : responses)
+	{
+		if (response.FinishDialogue)
+		{
+			addResponse(response);
+		}
+	}
+
+	PlaybackState = EPlaybackState::WaitingForResponse;
+	OnUpdateResponses.Broadcast(CurrentResponses);
+}
+
+void UDialogueManager::BeginActions(
+	const TArray<TObjectPtr<UDialogueAction>>& actions,
+	int64 nextNodeId,
+	bool finishAfterActions)
+{
+	PendingActions.Reset(actions.Num());
+	for (UDialogueAction* action : actions)
+	{
+		if (action)
+		{
+			PendingActions.Add(action);
+		}
+	}
+
+	if (PendingActions.IsEmpty())
+	{
+		if (finishAfterActions)
+		{
+			CompleteActiveDialogue();
+		}
+		else
+		{
+			AdvanceToNode(nextNodeId);
+		}
+		return;
+	}
+
+	PendingNextNodeId = nextNodeId;
+	PendingActionIndex = 0;
+	FinishAfterActions = finishAfterActions;
+	PlaybackState = EPlaybackState::ExecutingActions;
+	ActionTimerHandle = GetWorld()->GetTimerManager().SetTimerForNextTick(
+		this,
+		&UDialogueManager::ExecuteNextAction);
+}
+
+void UDialogueManager::ExecuteNextAction()
+{
+	if (PlaybackState != EPlaybackState::ExecutingActions
+		|| !PendingActions.IsValidIndex(PendingActionIndex))
+	{
+		return;
+	}
+
+	PendingActions[PendingActionIndex++]->ExecuteAction(GetExecutionContext());
+	if (PlaybackState != EPlaybackState::ExecutingActions)
+	{
+		return;
+	}
+
+	if (PendingActions.IsValidIndex(PendingActionIndex))
+	{
+		ActionTimerHandle = GetWorld()->GetTimerManager().SetTimerForNextTick(
+			this,
+			&UDialogueManager::ExecuteNextAction);
+		return;
+	}
+
+	PendingActions.Reset();
+	if (FinishAfterActions)
+	{
+		CompleteActiveDialogue();
+	}
+	else
+	{
+		AdvanceToNode(PendingNextNodeId);
+	}
+}
+
+void UDialogueManager::ShowEndResponse()
+{
+	if (!ActiveDialogue)
+	{
+		return;
+	}
+
+	TArray<FDialogueResponse> responses;
+	responses.AddDefaulted_GetRef().FinishDialogue = true;
+	PublishResponses(responses);
+}
+
+void UDialogueManager::ResetDialogueState()
+{
+	if (UWorld* world = GetWorld())
+	{
+		world->GetTimerManager().ClearTimer(TextTimerHandle);
+		world->GetTimerManager().ClearTimer(ActionTimerHandle);
+	}
+
+	ActiveDialogue = nullptr;
+	DialogueContext.Reset();
+	PendingActions.Reset();
+	CurrentResponses.Reset();
+	PreviousDialogue = nullptr;
+	PreviousReturnActions.Reset();
+	PlaybackState = EPlaybackState::Inactive;
+	CurrentSourceText = FText::GetEmpty();
+	CurrentSourceString.Reset();
+	CurrentRevealOffsets.Reset();
+	CurrentRevealOpenTags.Reset();
+	CurrentNodeId = -1;
+	PendingNextNodeId = -1;
+	PreviousReturnNodeId = -1;
+	CurrentTextIndex = 0;
+	RevealedCharacters = 0;
+	PendingActionIndex = 0;
+	FinishAfterActions = false;
+}

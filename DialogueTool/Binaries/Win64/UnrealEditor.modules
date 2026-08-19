@@ -1,0 +1,8 @@
+{
+	"BuildId": "43139311",
+	"Modules": 
+	{
+		"DialogueTool": "UnrealEditor-DialogueTool.dll",
+		"DialogueToolEditor": "UnrealEditor-DialogueToolEditor.dll"
+	}
+}
