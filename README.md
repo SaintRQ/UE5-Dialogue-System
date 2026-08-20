@@ -23,8 +23,6 @@ The current version is developed and verified with **Unreal Engine 5.6**.
 <details open>
 <summary><strong>🇷🇺 Русский</strong></summary>
 
-# Русская документация
-
 ## Содержание
 
 - [Возможности](#возможности)
@@ -663,8 +661,6 @@ virtual void ExecuteAction_Implementation(UObject* context) override;
 <a id="english"></a>
 <details>
 <summary><strong>🇬🇧 English</strong></summary>
-
-# English Documentation
 
 ## Contents
 
