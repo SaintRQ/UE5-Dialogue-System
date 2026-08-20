@@ -98,6 +98,9 @@ private:
 	// Generates text using a configured dialogue provider.
 	FText ResolveProviderText(const UDialogueProvider* provider) const;
 
+	// Continues dialogue without applying the manual input restriction.
+	void ContinueDialogueInternal();
+
 	// Starts displaying the current topic text entry.
 	void StartCurrentText();
 

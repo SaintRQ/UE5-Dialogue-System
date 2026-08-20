@@ -61,6 +61,43 @@ struct Z_Construct_UClass_UDialogueToolSettings_Statics
 		{ "IncludePath", "DialogueToolSettings.h" },
 		{ "ModuleRelativePath", "Public/DialogueToolSettings.h" },
 	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_AutoContinue_MetaData[] = {
+		{ "Category", "Text" },
+#if !UE_BUILD_SHIPPING
+		{ "Comment", "// Automatically continues after a fully revealed text when no response selection is waiting.\n" },
+#endif
+		{ "DisplayName", "Auto Continue" },
+		{ "ModuleRelativePath", "Public/DialogueToolSettings.h" },
+#if !UE_BUILD_SHIPPING
+		{ "ToolTip", "Automatically continues after a fully revealed text when no response selection is waiting." },
+#endif
+	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_AutoContinueDelay_MetaData[] = {
+		{ "Category", "Text" },
+		{ "ClampMin", "0.0" },
+#if !UE_BUILD_SHIPPING
+		{ "Comment", "// Defines the delay before automatic continuation in seconds.\n" },
+#endif
+		{ "DisplayName", "Auto Continue Delay" },
+		{ "EditCondition", "AutoContinue" },
+		{ "ModuleRelativePath", "Public/DialogueToolSettings.h" },
+#if !UE_BUILD_SHIPPING
+		{ "ToolTip", "Defines the delay before automatic continuation in seconds." },
+#endif
+		{ "UIMin", "0.0" },
+	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_AllowContinueClick_MetaData[] = {
+		{ "Category", "Text" },
+#if !UE_BUILD_SHIPPING
+		{ "Comment", "// Allows manual Continue input while automatic continuation is enabled.\n" },
+#endif
+		{ "DisplayName", "Allow Continue Click" },
+		{ "EditCondition", "AutoContinue" },
+		{ "ModuleRelativePath", "Public/DialogueToolSettings.h" },
+#if !UE_BUILD_SHIPPING
+		{ "ToolTip", "Allows manual Continue input while automatic continuation is enabled." },
+#endif
+	};
 	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_CharactersPerSecond_MetaData[] = {
 		{ "Category", "Text" },
 		{ "DisplayName", "Characters Per Second" },
@@ -90,6 +127,11 @@ struct Z_Construct_UClass_UDialogueToolSettings_Statics
 		{ "RequiredAssetDataTags", "RowStructure=/Script/UMG.RichTextStyleRow" },
 	};
 #endif // WITH_METADATA
+	static void NewProp_AutoContinue_SetBit(void* Obj);
+	static const UECodeGen_Private::FBoolPropertyParams NewProp_AutoContinue;
+	static const UECodeGen_Private::FFloatPropertyParams NewProp_AutoContinueDelay;
+	static void NewProp_AllowContinueClick_SetBit(void* Obj);
+	static const UECodeGen_Private::FBoolPropertyParams NewProp_AllowContinueClick;
 	static const UECodeGen_Private::FIntPropertyParams NewProp_CharactersPerSecond;
 	static const UECodeGen_Private::FTextPropertyParams NewProp_ResponseEndDialogueText;
 	static const UECodeGen_Private::FTextPropertyParams NewProp_ResponseReturnDialogueText;
@@ -104,6 +146,17 @@ struct Z_Construct_UClass_UDialogueToolSettings_Statics
 	};
 	static const UECodeGen_Private::FClassParams ClassParams;
 };
+void Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_AutoContinue_SetBit(void* Obj)
+{
+	((UDialogueToolSettings*)Obj)->AutoContinue = 1;
+}
+const UECodeGen_Private::FBoolPropertyParams Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_AutoContinue = { "AutoContinue", nullptr, (EPropertyFlags)0x0010000000004015, UECodeGen_Private::EPropertyGenFlags::Bool | UECodeGen_Private::EPropertyGenFlags::NativeBool, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, sizeof(bool), sizeof(UDialogueToolSettings), &Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_AutoContinue_SetBit, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_AutoContinue_MetaData), NewProp_AutoContinue_MetaData) };
+const UECodeGen_Private::FFloatPropertyParams Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_AutoContinueDelay = { "AutoContinueDelay", nullptr, (EPropertyFlags)0x0010000000004015, UECodeGen_Private::EPropertyGenFlags::Float, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueToolSettings, AutoContinueDelay), METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_AutoContinueDelay_MetaData), NewProp_AutoContinueDelay_MetaData) };
+void Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_AllowContinueClick_SetBit(void* Obj)
+{
+	((UDialogueToolSettings*)Obj)->AllowContinueClick = 1;
+}
+const UECodeGen_Private::FBoolPropertyParams Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_AllowContinueClick = { "AllowContinueClick", nullptr, (EPropertyFlags)0x0010000000004015, UECodeGen_Private::EPropertyGenFlags::Bool | UECodeGen_Private::EPropertyGenFlags::NativeBool, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, sizeof(bool), sizeof(UDialogueToolSettings), &Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_AllowContinueClick_SetBit, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_AllowContinueClick_MetaData), NewProp_AllowContinueClick_MetaData) };
 const UECodeGen_Private::FIntPropertyParams Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_CharactersPerSecond = { "CharactersPerSecond", nullptr, (EPropertyFlags)0x0010000000004015, UECodeGen_Private::EPropertyGenFlags::Int, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueToolSettings, CharactersPerSecond), METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_CharactersPerSecond_MetaData), NewProp_CharactersPerSecond_MetaData) };
 const UECodeGen_Private::FTextPropertyParams Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_ResponseEndDialogueText = { "ResponseEndDialogueText", nullptr, (EPropertyFlags)0x0010000000004015, UECodeGen_Private::EPropertyGenFlags::Text, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueToolSettings, ResponseEndDialogueText), METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_ResponseEndDialogueText_MetaData), NewProp_ResponseEndDialogueText_MetaData) };
 const UECodeGen_Private::FTextPropertyParams Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_ResponseReturnDialogueText = { "ResponseReturnDialogueText", nullptr, (EPropertyFlags)0x0010000000004015, UECodeGen_Private::EPropertyGenFlags::Text, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueToolSettings, ResponseReturnDialogueText), METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_ResponseReturnDialogueText_MetaData), NewProp_ResponseReturnDialogueText_MetaData) };
@@ -112,6 +165,9 @@ const UECodeGen_Private::FNamePropertyParams Z_Construct_UClass_UDialogueToolSet
 const UECodeGen_Private::FMapPropertyParams Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_ResponseCustomTextList = { "ResponseCustomTextList", nullptr, (EPropertyFlags)0x0010000000004015, UECodeGen_Private::EPropertyGenFlags::Map, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueToolSettings, ResponseCustomTextList), EMapPropertyFlags::None, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_ResponseCustomTextList_MetaData), NewProp_ResponseCustomTextList_MetaData) };
 const UECodeGen_Private::FSoftObjectPropertyParams Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_RichTextStyleSet = { "RichTextStyleSet", nullptr, (EPropertyFlags)0x0014000000004015, UECodeGen_Private::EPropertyGenFlags::SoftObject, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueToolSettings, RichTextStyleSet), Z_Construct_UClass_UDataTable_NoRegister, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_RichTextStyleSet_MetaData), NewProp_RichTextStyleSet_MetaData) };
 const UECodeGen_Private::FPropertyParamsBase* const Z_Construct_UClass_UDialogueToolSettings_Statics::PropPointers[] = {
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_AutoContinue,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_AutoContinueDelay,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_AllowContinueClick,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_CharactersPerSecond,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_ResponseEndDialogueText,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueToolSettings_Statics::NewProp_ResponseReturnDialogueText,
@@ -157,10 +213,10 @@ UDialogueToolSettings::~UDialogueToolSettings() {}
 struct Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueToolSettings_h__Script_DialogueTool_Statics
 {
 	static constexpr FClassRegisterCompiledInInfo ClassInfo[] = {
-		{ Z_Construct_UClass_UDialogueToolSettings, UDialogueToolSettings::StaticClass, TEXT("UDialogueToolSettings"), &Z_Registration_Info_UClass_UDialogueToolSettings, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UDialogueToolSettings), 857690013U) },
+		{ Z_Construct_UClass_UDialogueToolSettings, UDialogueToolSettings::StaticClass, TEXT("UDialogueToolSettings"), &Z_Registration_Info_UClass_UDialogueToolSettings, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UDialogueToolSettings), 782696062U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueToolSettings_h__Script_DialogueTool_3741961205(TEXT("/Script/DialogueTool"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueToolSettings_h__Script_DialogueTool_1884210860(TEXT("/Script/DialogueTool"),
 	Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueToolSettings_h__Script_DialogueTool_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueToolSettings_h__Script_DialogueTool_Statics::ClassInfo),
 	nullptr, 0,
 	nullptr, 0);

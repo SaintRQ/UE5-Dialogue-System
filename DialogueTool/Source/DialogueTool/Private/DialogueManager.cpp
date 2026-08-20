@@ -47,9 +47,26 @@ bool UDialogueManager::StartDialogue(
 
 void UDialogueManager::ContinueDialogue()
 {
+	const UDialogueToolSettings* settings = GetDefault<UDialogueToolSettings>();
+	if (settings->AutoContinue && !settings->AllowContinueClick)
+	{
+		return;
+	}
+
+	ContinueDialogueInternal();
+}
+
+void UDialogueManager::ContinueDialogueInternal()
+{
+	UWorld* world = GetWorld();
+	if (!world)
+	{
+		return;
+	}
+
+	world->GetTimerManager().ClearTimer(TextTimerHandle);
 	if (PlaybackState == EPlaybackState::TypingText)
 	{
-		GetWorld()->GetTimerManager().ClearTimer(TextTimerHandle);
 		CompleteCurrentTextReveal();
 		return;
 	}
@@ -289,6 +306,27 @@ void UDialogueManager::CompleteCurrentTextReveal()
 		&& !dialogueNode->Response.IsEmpty())
 	{
 		CompleteCurrentTopic();
+		return;
+	}
+
+	const UDialogueToolSettings* settings = GetDefault<UDialogueToolSettings>();
+	if (dialogueNode && settings->AutoContinue)
+	{
+		if (settings->AutoContinueDelay <= 0.0f)
+		{
+			TextTimerHandle = GetWorld()->GetTimerManager().SetTimerForNextTick(
+				this,
+				&UDialogueManager::ContinueDialogueInternal);
+		}
+		else
+		{
+			GetWorld()->GetTimerManager().SetTimer(
+				TextTimerHandle,
+				this,
+				&UDialogueManager::ContinueDialogueInternal,
+				settings->AutoContinueDelay,
+				false);
+		}
 	}
 }
 

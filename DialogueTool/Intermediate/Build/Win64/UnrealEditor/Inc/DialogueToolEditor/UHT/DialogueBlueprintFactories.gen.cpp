@@ -16,6 +16,8 @@ DIALOGUETOOLEDITOR_API UClass* Z_Construct_UClass_UDialogueActionBlueprintFactor
 DIALOGUETOOLEDITOR_API UClass* Z_Construct_UClass_UDialogueActionBlueprintFactory_NoRegister();
 DIALOGUETOOLEDITOR_API UClass* Z_Construct_UClass_UDialogueConditionBlueprintFactory();
 DIALOGUETOOLEDITOR_API UClass* Z_Construct_UClass_UDialogueConditionBlueprintFactory_NoRegister();
+DIALOGUETOOLEDITOR_API UClass* Z_Construct_UClass_UDialogueProviderBlueprintFactory();
+DIALOGUETOOLEDITOR_API UClass* Z_Construct_UClass_UDialogueProviderBlueprintFactory_NoRegister();
 UNREALED_API UClass* Z_Construct_UClass_UBlueprintFactory();
 UPackage* Z_Construct_UPackage__Script_DialogueToolEditor();
 // ********** End Cross Module References **********************************************************
@@ -180,15 +182,96 @@ DEFINE_VTABLE_PTR_HELPER_CTOR(UDialogueActionBlueprintFactory);
 UDialogueActionBlueprintFactory::~UDialogueActionBlueprintFactory() {}
 // ********** End Class UDialogueActionBlueprintFactory ********************************************
 
+// ********** Begin Class UDialogueProviderBlueprintFactory ****************************************
+void UDialogueProviderBlueprintFactory::StaticRegisterNativesUDialogueProviderBlueprintFactory()
+{
+}
+FClassRegistrationInfo Z_Registration_Info_UClass_UDialogueProviderBlueprintFactory;
+UClass* UDialogueProviderBlueprintFactory::GetPrivateStaticClass()
+{
+	using TClass = UDialogueProviderBlueprintFactory;
+	if (!Z_Registration_Info_UClass_UDialogueProviderBlueprintFactory.InnerSingleton)
+	{
+		GetPrivateStaticClassBody(
+			StaticPackage(),
+			TEXT("DialogueProviderBlueprintFactory"),
+			Z_Registration_Info_UClass_UDialogueProviderBlueprintFactory.InnerSingleton,
+			StaticRegisterNativesUDialogueProviderBlueprintFactory,
+			sizeof(TClass),
+			alignof(TClass),
+			TClass::StaticClassFlags,
+			TClass::StaticClassCastFlags(),
+			TClass::StaticConfigName(),
+			(UClass::ClassConstructorType)InternalConstructor<TClass>,
+			(UClass::ClassVTableHelperCtorCallerType)InternalVTableHelperCtorCaller<TClass>,
+			UOBJECT_CPPCLASS_STATICFUNCTIONS_FORCLASS(TClass),
+			&TClass::Super::StaticClass,
+			&TClass::WithinClass::StaticClass
+		);
+	}
+	return Z_Registration_Info_UClass_UDialogueProviderBlueprintFactory.InnerSingleton;
+}
+UClass* Z_Construct_UClass_UDialogueProviderBlueprintFactory_NoRegister()
+{
+	return UDialogueProviderBlueprintFactory::GetPrivateStaticClass();
+}
+struct Z_Construct_UClass_UDialogueProviderBlueprintFactory_Statics
+{
+#if WITH_METADATA
+	static constexpr UECodeGen_Private::FMetaDataPairParam Class_MetaDataParams[] = {
+		{ "HideCategories", "Object" },
+		{ "IncludePath", "DialogueBlueprintFactories.h" },
+		{ "ModuleRelativePath", "Public/DialogueBlueprintFactories.h" },
+	};
+#endif // WITH_METADATA
+	static UObject* (*const DependentSingletons[])();
+	static constexpr FCppClassTypeInfoStatic StaticCppClassTypeInfo = {
+		TCppClassTypeTraits<UDialogueProviderBlueprintFactory>::IsAbstract,
+	};
+	static const UECodeGen_Private::FClassParams ClassParams;
+};
+UObject* (*const Z_Construct_UClass_UDialogueProviderBlueprintFactory_Statics::DependentSingletons[])() = {
+	(UObject* (*)())Z_Construct_UClass_UBlueprintFactory,
+	(UObject* (*)())Z_Construct_UPackage__Script_DialogueToolEditor,
+};
+static_assert(UE_ARRAY_COUNT(Z_Construct_UClass_UDialogueProviderBlueprintFactory_Statics::DependentSingletons) < 16);
+const UECodeGen_Private::FClassParams Z_Construct_UClass_UDialogueProviderBlueprintFactory_Statics::ClassParams = {
+	&UDialogueProviderBlueprintFactory::StaticClass,
+	nullptr,
+	&StaticCppClassTypeInfo,
+	DependentSingletons,
+	nullptr,
+	nullptr,
+	nullptr,
+	UE_ARRAY_COUNT(DependentSingletons),
+	0,
+	0,
+	0,
+	0x001020A0u,
+	METADATA_PARAMS(UE_ARRAY_COUNT(Z_Construct_UClass_UDialogueProviderBlueprintFactory_Statics::Class_MetaDataParams), Z_Construct_UClass_UDialogueProviderBlueprintFactory_Statics::Class_MetaDataParams)
+};
+UClass* Z_Construct_UClass_UDialogueProviderBlueprintFactory()
+{
+	if (!Z_Registration_Info_UClass_UDialogueProviderBlueprintFactory.OuterSingleton)
+	{
+		UECodeGen_Private::ConstructUClass(Z_Registration_Info_UClass_UDialogueProviderBlueprintFactory.OuterSingleton, Z_Construct_UClass_UDialogueProviderBlueprintFactory_Statics::ClassParams);
+	}
+	return Z_Registration_Info_UClass_UDialogueProviderBlueprintFactory.OuterSingleton;
+}
+DEFINE_VTABLE_PTR_HELPER_CTOR(UDialogueProviderBlueprintFactory);
+UDialogueProviderBlueprintFactory::~UDialogueProviderBlueprintFactory() {}
+// ********** End Class UDialogueProviderBlueprintFactory ******************************************
+
 // ********** Begin Registration *******************************************************************
 struct Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueToolEditor_Public_DialogueBlueprintFactories_h__Script_DialogueToolEditor_Statics
 {
 	static constexpr FClassRegisterCompiledInInfo ClassInfo[] = {
 		{ Z_Construct_UClass_UDialogueConditionBlueprintFactory, UDialogueConditionBlueprintFactory::StaticClass, TEXT("UDialogueConditionBlueprintFactory"), &Z_Registration_Info_UClass_UDialogueConditionBlueprintFactory, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UDialogueConditionBlueprintFactory), 2592419006U) },
 		{ Z_Construct_UClass_UDialogueActionBlueprintFactory, UDialogueActionBlueprintFactory::StaticClass, TEXT("UDialogueActionBlueprintFactory"), &Z_Registration_Info_UClass_UDialogueActionBlueprintFactory, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UDialogueActionBlueprintFactory), 3910332257U) },
+		{ Z_Construct_UClass_UDialogueProviderBlueprintFactory, UDialogueProviderBlueprintFactory::StaticClass, TEXT("UDialogueProviderBlueprintFactory"), &Z_Registration_Info_UClass_UDialogueProviderBlueprintFactory, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UDialogueProviderBlueprintFactory), 3344743181U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueToolEditor_Public_DialogueBlueprintFactories_h__Script_DialogueToolEditor_1433643681(TEXT("/Script/DialogueToolEditor"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueToolEditor_Public_DialogueBlueprintFactories_h__Script_DialogueToolEditor_112211691(TEXT("/Script/DialogueToolEditor"),
 	Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueToolEditor_Public_DialogueBlueprintFactories_h__Script_DialogueToolEditor_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueToolEditor_Public_DialogueBlueprintFactories_h__Script_DialogueToolEditor_Statics::ClassInfo),
 	nullptr, 0,
 	nullptr, 0);

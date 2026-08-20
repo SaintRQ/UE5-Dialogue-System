@@ -40,3 +40,20 @@ public:
 	// Returns the Dialogue Tool creation category.
 	virtual uint32 GetMenuCategories() const override;
 };
+
+UCLASS()
+class DIALOGUETOOLEDITOR_API UDialogueProviderBlueprintFactory final : public UBlueprintFactory
+{
+	GENERATED_BODY()
+
+public:
+
+	// Configures Blueprint creation for dialogue providers.
+	UDialogueProviderBlueprintFactory();
+
+	// Returns the factory name shown in the creation menu.
+	virtual FText GetDisplayName() const override;
+
+	// Returns the Dialogue Tool creation category.
+	virtual uint32 GetMenuCategories() const override;
+};
