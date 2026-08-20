@@ -7,9 +7,9 @@
 >
 > **EN:** Dialogue Tool is an Unreal Engine plugin that provides a visual editor for branching conversations, reusable dialogue libraries, conditions, actions, Rich Text, and a UI-independent runtime player.
 
-Текущая версия разработана и проверена на **Unreal Engine 5.6**. Runtime и Editor находятся в отдельных модулях, поэтому редактор графа не попадает в packaged build.
+Текущая версия разработана и проверена на **Unreal Engine 5.6**. 
 
-The current version is developed and verified with **Unreal Engine 5.6**. Runtime and editor code live in separate modules, so the graph editor is not included in packaged builds.
+The current version is developed and verified with **Unreal Engine 5.6**.
 
 ---
 
