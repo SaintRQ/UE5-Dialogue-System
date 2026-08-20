@@ -45,6 +45,7 @@ The current version is developed and verified with **Unreal Engine 5.6**.
 - настройка параметров экземпляра условия или действия прямо внутри узла;
 - последовательное выполнение нескольких действий;
 - посимвольный вывод текста;
+- динамическое изменение текста - как самого топика, так и ответов.
 - поддержка Rich Text во время анимации текста;
 - выбор: скрыть недоступный ответ или оставить его видимым, но отключённым;
 - runtime-проигрыватель в виде `UGameInstanceSubsystem`;
@@ -165,6 +166,8 @@ Blueprint-класс, унаследованный от `UDialogueAction`. Вы�
 
 ### DIALOGUE START / LIBRARY START
 
+<img width="498" height="322" alt="start" src="https://github.com/user-attachments/assets/0e199b17-6836-4c89-847b-2e458b1bfbfd" />
+
 Обязательный и неудаляемый стартовый узел. При первом открытии создаётся запись `Default`.
 
 Каждая запись содержит:
@@ -185,6 +188,8 @@ Blueprint-класс, унаследованный от `UDialogueAction`. Вы�
 
 ### TOPIC
 
+<img width="591" height="384" alt="topicк" src="https://github.com/user-attachments/assets/1bb8197e-4f2b-4c57-8950-5117e7fdf766" />
+
 Основной узел диалога. Содержит секции `Text` и `Response`.
 
 `Text` — последовательность реплик. Они выводятся сверху вниз. Кнопка `ContinueDialogue`:
@@ -199,8 +204,9 @@ Blueprint-класс, унаследованный от `UDialogueAction`. Вы�
 
 Кнопки ответа:
 
-- синяя `Add` — добавить обычный ответ;
-- красная `Add Finish` — добавить ответ, завершающий диалог;
+- синяя `Add` - добавить обычный ответ;
+- зеленая `Add Custim` - добавить ответ из заготовленной библиотеки. В настройках плагина - `ResponseCustomTextList`.
+- красная `Add Finish` - добавить ответ, завершающий диалог;
 - в библиотеке красная кнопка называется `Add Return` и возвращает управление вызывающему диалогу;
 - кнопка с `?` — открыть список условий ответа;
 - кнопка с глазом — выбрать поведение при невыполненных условиях;
@@ -209,11 +215,13 @@ Blueprint-класс, унаследованный от `UDialogueAction`. Вы�
 Поведение кнопки с глазом:
 
 - включена: недоступный ответ приходит в UI как `VisibleFailure`; его нужно показать отключённым;
-- выключена: недоступный ответ приходит как `Invisible`; его не нужно создавать в UI.
+- выключена: недоступный ответ не приходит в событие.
 
-Терминальный ответ всегда доступен, всегда располагается после обычных ответов и получает текст из настроек плагина. Его собственный текст и условия не редактируются. К его выходу можно подключить `ACTIONS`, чтобы выполнить логику перед завершением или возвратом.
+Терминальный ответ (кнопка выхода\возврата) всегда доступен, всегда располагается после обычных ответов и получает текст из настроек плагина. Его собственный текст и условия не редактируются. К его выходу можно подключить `ACTIONS`, чтобы выполнить логику перед завершением или возвратом.
 
 ### ACTIONS
+
+<img width="1112" height="532" alt="act" src="https://github.com/user-attachments/assets/cd4eaf92-486c-4661-a498-bff230ea2e7c" />
 
 Узел выполняет список классов `UDialogueAction` в порядке сверху вниз. Его следует ставить внутрь соединения:
 
@@ -227,17 +235,22 @@ TOPIC ──► ACTIONS ──► TOPIC
 
 ### SWITCH
 
+<img width="1235" height="530" alt="switch" src="https://github.com/user-attachments/assets/d9c95827-beb2-4081-868c-ea02e3a26514" />
+
 Условное ветвление. В узле всегда есть минимум две ветки.
 
 - ветки проверяются сверху вниз;
 - в одной ветке все условия объединяются через логическое **AND**;
 - выбирается первая ветка, у которой прошли все условия;
 - ветка без условий всегда проходит и подходит для fallback;
-- если ни одна ветка не прошла, runtime покажет терминальный ответ.
+- если ни одна ветка не прошла, runtime покажет терминальный ответ (завершение диалога).
+
 
 Название ветки — только подпись в редакторе. Кнопка `?` открывает условия, `Add` добавляет ветку, `-` удаляет её. Для предсказуемого результата оставляйте безусловную ветку последней.
 
 ### TRANSIT
+
+<img width="1032" height="505" alt="transit" src="https://github.com/user-attachments/assets/ee3676d7-0273-4f25-bb9a-3a436b87bf15" />
 
 Вызывает `Dialogue Library`. Узел доступен только в обычном `Dialogue Object`.
 
@@ -250,7 +263,17 @@ TOPIC ──► ACTIONS ──► TOPIC
 
 Если библиотека не назначена или ни одна её точка старта не подошла, библиотека пропускается, а поток сразу идёт через `Return`.
 
+### PROVIDER
+
+<img width="1060" height="387" alt="provider" src="https://github.com/user-attachments/assets/3bc42cf6-4de5-4071-9a24-e07e34cda338" />
+
+Вызывает `Dialogue Provider`. Узел доступен только для текста и ответов внутри ноды `Topic`.
+
+Позволяет динамически изменять текст внутри как топика, так и ответа.
+
 ### FINISH DIALOGUE / RETURN
+
+<img width="970" height="531" alt="finish" src="https://github.com/user-attachments/assets/8274bf87-5268-4c5a-b13d-0e4154ef721c" />
 
 Терминальный узел без выбора ответа:
 
@@ -258,12 +281,6 @@ TOPIC ──► ACTIONS ──► TOPIC
 - `RETURN` завершает библиотеку и возвращает управление в `TRANSIT`.
 
 Используйте этот узел, когда диалог должен завершиться автоматически после темы, ветки или действий. Используйте `Add Finish` / `Add Return`, когда игрок должен явно выбрать терминальный ответ.
-
-### REROUTE
-
-Визуальная точка управления проводом. Не меняет runtime-логику.
-
-Создать её можно через `Add Reroute` или двойным щелчком по существующему проводу.
 
 ### Комментарии и редактирование графа
 
@@ -274,7 +291,7 @@ TOPIC ──► ACTIONS ──► TOPIC
 
 Индикатор в заголовке узла показывает, существует ли путь от стартового узла до этого узла. Это помогает находить недостижимые части графа.
 
-## Условия
+## Условия (Conditions)
 
 ### Создание Blueprint-условия
 
@@ -300,7 +317,7 @@ TOPIC ──► ACTIONS ──► TOPIC
 
 Базовая реализация `UDialogueCondition` возвращает `true`, поэтому не забудьте переопределить `ExecuteCondition`.
 
-## Действия
+## Действия (Actions)
 
 ### Создание Blueprint-действия
 
@@ -314,6 +331,15 @@ TOPIC ──► ACTIONS ──► TOPIC
 Для параметров действия используйте переменные `Instance Editable`: тогда разные экземпляры одного класса в графе смогут, например, выдавать разные предметы или запускать разные квесты.
 
 Действия выполняются строго по порядку. Между действиями есть один игровой tick. Если действие вызвало `FinishDialogue`, оставшаяся очередь больше не выполняется.
+
+## Проводник (Provider)
+
+1. Выберите `Content Browser > Add > Dialogue Tool > Dialogue Provider`.
+2. Назовите Blueprint, например `BP_DP_PlayerName`.
+3. В `Overrides` выберите `Execute Provider`.
+4. Приведите `Context` к нужному классу и выполните игровую логику.
+5. Скомпилируйте и сохраните Blueprint.
+6. Добавьте в граф узел `PROVIDER` и выберите созданный класс.
 
 ## Библиотеки диалогов
 
@@ -478,6 +504,14 @@ void OnDialogueResponsesUpdated(const TArray<FDialogueResponse>& responses);
 // Handles dialogue completion.
 UFUNCTION()
 void OnDialogueFinished();
+
+// Plays a topic or response sound requested by the dialogue manager.
+UFUNCTION()
+void OnPlaySound(USoundBase* Sound);
+
+// Shows the continue marker only while explicit input is required.
+void UpdatePressMarkVisibility() const;
+
 ```
 
 При уничтожении UI или владельца удаляйте подписки. Если разговор нужно прервать, после удаления подписок вызовите `FinishDialogue` либо обработайте его событие до закрытия UI.
@@ -611,603 +645,3 @@ virtual void ExecuteAction_Implementation(UObject* context) override;
 ### В конце ветки неожиданно появляется завершение диалога
 
 Поток не имеет корректного продолжения, либо ни одна ветка `SWITCH` не прошла. Подключите выход или добавьте последнюю безусловную ветку.
-
----
-
-# English Documentation
-
-## Contents
-
-- [Features](#features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Plugin Settings](#plugin-settings)
-- [Asset Types](#asset-types)
-- [Graph Nodes](#graph-nodes)
-- [Conditions](#conditions)
-- [Actions](#actions)
-- [Dialogue Libraries](#dialogue-libraries)
-- [Rich Text](#rich-text-1)
-- [Blueprint UI Integration](#blueprint-ui-integration)
-- [C++ Integration](#c-integration)
-- [Runtime API](#runtime-api-1)
-- [Execution Rules](#execution-rules)
-- [Best Practices](#best-practices)
-- [Troubleshooting](#troubleshooting)
-
-## Features
-
-- `Dialogue Object` assets for complete conversations;
-- `Dialogue Library` assets for reusable conversation fragments;
-- a visual graph with topics, responses, branches, actions, and terminal nodes;
-- multiple conditional entry points;
-- conditions for entry points, `SWITCH` branches, and player responses;
-- Blueprint and C++ condition/action classes;
-- per-node editable condition and action parameters;
-- ordered execution of multiple actions;
-- typewriter-style text reveal;
-- Rich Text support during animated reveal;
-- unavailable responses that can be hidden or shown as disabled;
-- a runtime player implemented as a `UGameInstanceSubsystem`;
-- no required UI framework: use UMG, Common UI, Slate, or a custom interface.
-
-## Installation
-
-1. Copy the `DialogueTool` folder into your project's `Plugins` directory:
-
-   ```text
-   YourProject/
-   └── Plugins/
-       └── DialogueTool/
-           ├── DialogueTool.uplugin
-           └── Source/
-   ```
-
-2. Create the `Plugins` directory if it does not exist.
-3. Open the project and accept the module rebuild prompt if Unreal Engine shows one.
-4. Open `Edit > Plugins`, search for **Dialogue Tool**, and make sure it is enabled.
-5. Restart the editor after enabling the plugin.
-
-A C++ project needs a supported compiler and the Unreal Engine development components. If the asset menu or plugin classes do not appear, close the editor, regenerate project files, and build the project again.
-
-## Quick Start
-
-1. Open `Project Settings > Plugins > Dialogue Tool`.
-2. Set `Response End Dialogue Text` and `Response Return Dialogue Text`.
-3. In the Content Browser, choose `Add > Dialogue Tool > Dialogue Object`.
-4. Open the new asset.
-5. Keep the default `Default` entry in `DIALOGUE START`.
-6. Drag from the `Default` output, release on empty graph space, and choose `Add Topic`.
-7. Enter the character line in the `TOPIC` node's `Text` section.
-8. Use the blue `Add` button in `Response`, enter a player response, and connect its output to another `TOPIC`.
-9. Use the red `Add Finish` button to add a terminal response.
-10. Save the asset.
-11. In the game UI, obtain the `Dialogue Manager`, bind its events, and then call `Start Dialogue`.
-
-Minimal flow:
-
-```text
-DIALOGUE START: Default
-        │
-        ▼
-      TOPIC
-      ├── Response 1 ──► TOPIC
-      └── Add Finish ──► finish dialogue
-```
-
-## Plugin Settings
-
-Settings are available under `Project Settings > Plugins > Dialogue Tool` and are stored in `DefaultGame.ini`.
-
-| Setting | Purpose |
-|---|---|
-| `Characters Per Second` | Typewriter reveal speed. A value of `0` or less reveals text immediately. |
-| `Response End Dialogue Text` | Text for the generated response that ends a regular dialogue. A non-empty value is recommended. |
-| `Response Return Dialogue Text` | Text for a terminal response inside a library. The default is `Return`. |
-| `Rich Text Style Set` | A Data Table using `RichTextStyleRow`. The editor uses it to build the tag menu; game `RichTextBlock` widgets should use the same table. |
-
-Equivalent configuration:
-
-```ini
-[/Script/DialogueTool.DialogueToolSettings]
-CharactersPerSecond=20
-RichTextStyleSet=/Game/UI/DT_RichTextStyle.DT_RichTextStyle
-ResponseEndDialogueText=Finish dialogue
-ResponseReturnDialogueText=Return
-```
-
-For localized projects, set response labels through Project Settings so they are stored as `FText`.
-
-## Asset Types
-
-### Dialogue Object
-
-The root conversation asset accepted by `StartDialogue`. It supports every graph node, including `TRANSIT` nodes that call a library.
-
-Create it with `Content Browser > Add > Dialogue Tool > Dialogue Object`.
-
-### Dialogue Library
-
-A reusable conversation fragment. It cannot be passed directly to `StartDialogue`; a regular dialogue enters it through `TRANSIT` and resumes after the library returns.
-
-Create it with `Content Browser > Add > Dialogue Tool > Dialogue Library`.
-
-Inside a library:
-
-- `DIALOGUE START` becomes `LIBRARY START`;
-- `FINISH DIALOGUE` becomes `RETURN`;
-- `Add Finish` becomes `Add Return`;
-- `TRANSIT` is unavailable, so libraries cannot nest.
-
-### Dialogue Condition
-
-A Blueprint class derived from `UDialogueCondition`. It returns `true` or `false` and can be assigned to starts, responses, and `SWITCH` branches.
-
-Create it with `Content Browser > Add > Dialogue Tool > Dialogue Condition`.
-
-"To make a specific variable visible in the Details panel of the 'conditions' section inside the dialogue editor (condition editor) in a single row, set the EditInstanceOnly tag for this variable (Instance Editable in Blueprints)."
-
-<img width="1006" height="441" alt="2" src="https://github.com/user-attachments/assets/50dd9a20-aef6-4a79-86c9-37a59dd63c3a" />
-
-
-### Dialogue Action
-
-A Blueprint class derived from `UDialogueAction`. It performs gameplay logic when flow passes through an `ACTIONS` node.
-
-Create it with `Content Browser > Add > Dialogue Tool > Dialogue Action`.
-
-"To make a specific variable visible in the Details panel of the 'actions' section inside the dialogue editor (action editor) in a single row, set the EditInstanceOnly tag for this variable (Instance Editable in Blueprints)."
-
-## Graph Nodes
-
-Right-click empty graph space to open the node menu. You can also drag from an output pin and select a node; it will be connected automatically.
-
-Each output supports one connection. Connecting a different target to an occupied output replaces the previous link.
-
-### DIALOGUE START / LIBRARY START
-
-The required, non-deletable entry node. A `Default` entry is created when a new asset is opened.
-
-Each entry has:
-
-- a name used to organize the graph;
-- a condition list;
-- its own flow output.
-
-Entries are evaluated from top to bottom. The **first** entry whose conditions all pass is selected. If no entry matches, `StartDialogue` returns `false`. The entry name is not a runtime selector and does not affect execution.
-
-Recommended order:
-
-1. the most specific condition sets;
-2. more general condition sets;
-3. an unconditional fallback entry at the bottom.
-
-The `Add` button creates another entry. At least one entry must remain.
-
-### TOPIC
-
-The main conversation node. It contains `Text` and `Response` sections.
-
-`Text` is an ordered list of lines. `ContinueDialogue` behaves as follows:
-
-- while a line is being typed, it reveals the complete current line;
-- after the line is complete, it advances to the next line;
-- after the final line, it continues flow or publishes responses.
-
-At least one text entry remains in every topic. Empty text is valid and is revealed immediately. Responses appear at once when present; without responses, `ContinueDialogue` is still required to advance.
-
-A topic without responses has one default output. Once responses are added, every response receives its own output, and the existing default link is moved to the first response.
-
-Response controls:
-
-- blue `Add` — add a regular response;
-- red `Add Finish` — add a response that ends the conversation;
-- in a library, the red button is `Add Return` and returns to the caller;
-- `?` — edit response conditions;
-- eye icon — choose how a failed response is presented;
-- `-` — remove the response.
-
-Eye icon behavior:
-
-- enabled: a failed response is sent as `VisibleFailure` and should be visible but disabled;
-- disabled: a failed response is sent as `Invisible` and should not be created in the UI.
-
-A terminal response is always available, is ordered after regular responses, and gets its text from plugin settings. Its text and conditions are not editable. Connect `ACTIONS` to its output to perform work before finishing or returning.
-
-### ACTIONS
-
-Executes its `UDialogueAction` classes from top to bottom. Place it inside a flow connection:
-
-```text
-TOPIC ──► ACTIONS ──► TOPIC
-```
-
-Multiple `ACTIONS` nodes can be chained. All resolved actions execute in graph order, one action per next game tick, before flow enters the destination node.
-
-Instance-editable action properties appear next to the selected class in the node.
-
-### SWITCH
-
-A conditional branch node with at least two branches.
-
-- branches are evaluated from top to bottom;
-- all conditions within one branch use logical **AND**;
-- the first passing branch is selected;
-- a branch with no conditions always passes and is suitable as a fallback;
-- if no branch passes, runtime publishes a terminal response.
-
-Branch names are editor-only labels. Use `?` to edit conditions, `Add` to append a branch, and `-` to remove one. Keep the unconditional fallback last.
-
-### TRANSIT
-
-Calls a `Dialogue Library`. This node is available only in a regular `Dialogue Object`.
-
-1. Add a `TRANSIT` node.
-2. Select a library asset in the node.
-3. Connect its input to the main flow.
-4. Connect its `Return` output to the point where the main conversation should resume.
-
-When flow enters `TRANSIT`, the library selects its first matching `LIBRARY START` entry. Reaching `RETURN` or selecting `Add Return` restores the main dialogue, executes actions placed on the `Return` path, and continues from its destination.
-
-If no library is assigned or no library entry matches, the library is skipped and flow proceeds through `Return` immediately.
-
-### FINISH DIALOGUE / RETURN
-
-A terminal node that does not require a player response:
-
-- `FINISH DIALOGUE` ends a regular dialogue;
-- `RETURN` ends a library and resumes at the caller's `TRANSIT` node.
-
-Use it when a topic, branch, or action chain should finish automatically. Use `Add Finish` / `Add Return` when the player must explicitly select a terminal response.
-
-### REROUTE
-
-A visual wire control point with no runtime effect.
-
-Create it with `Add Reroute` or by double-clicking an existing wire.
-
-### Comments and graph editing
-
-- `C` — create a comment around selected nodes;
-- `Ctrl+C` / `Ctrl+V` — copy and paste selected nodes;
-- `Delete` — delete selected nodes except the required start node;
-- `Ctrl+Z` / `Ctrl+Y` — Undo / Redo.
-
-The status indicator in a node header shows whether a path from the start node reaches that node. Use it to find unreachable graph sections.
-
-## Conditions
-
-### Creating a Blueprint condition
-
-1. Choose `Content Browser > Add > Dialogue Tool > Dialogue Condition`.
-2. Name the Blueprint, for example `BP_DC_HasQuest`.
-3. Open it and override `Execute Condition`.
-4. Cast the `Context` input to the expected type and return the check result.
-5. Compile and save the Blueprint.
-6. Open `?` on a start, response, or `SWITCH` branch, click `Add`, and select the class.
-
-`Context` is the object passed as the second argument to `StartDialogue`. If no valid context is available, the plugin supplies the `GameInstance`.
-
-Mark Blueprint variables as `Instance Editable` to expose per-instance parameters directly in the dialogue graph.
-
-Evaluation rules:
-
-- every condition in a list must return `true`;
-- an empty list succeeds;
-- an unassigned class entry is skipped and does not fail the list;
-- entries and `SWITCH` branches use the first successful list;
-- response conditions produce `VisibleSuccess`, `VisibleFailure`, or `Invisible`.
-
-The base `UDialogueCondition` implementation returns `true`, so remember to override `ExecuteCondition`.
-
-## Actions
-
-### Creating a Blueprint action
-
-1. Choose `Content Browser > Add > Dialogue Tool > Dialogue Action`.
-2. Name the Blueprint, for example `BP_DA_GiveItem`.
-3. Override `Execute Action`.
-4. Cast `Context` to the required type and perform the gameplay logic.
-5. Compile and save the Blueprint.
-6. Add an `ACTIONS` node to the graph and select the class.
-
-Use `Instance Editable` Blueprint variables for per-node parameters, allowing instances of the same class to grant different items, start different quests, or play different effects.
-
-Actions execute strictly in order, with one game tick between actions. If an action calls `FinishDialogue`, the remaining queue is not executed.
-
-## Dialogue Libraries
-
-Libraries are useful for repeated fragments such as shop greetings, tutorials, reputation checks, or standard farewells.
-
-Example:
-
-```text
-Main Dialogue
-TOPIC ──► TRANSIT: DL_CommonGreeting ──Return──► TOPIC
-
-Dialogue Library
-LIBRARY START ──► TOPIC ──► RETURN
-```
-
-Important rules:
-
-- `StartDialogue` accepts only a regular `Dialogue Object`;
-- a library cannot call another library;
-- a library selects an entry by conditions, not by name;
-- actions before `RETURN` execute inside the library;
-- actions after the `TRANSIT` node's `Return` output execute after the root dialogue is restored;
-- entry names should be treated as readable documentation for the graph.
-
-## Rich Text
-
-1. Create a Data Table using `RichTextStyleRow`.
-2. Add style rows such as `Important`, `CharacterName`, and `Warning`.
-3. Assign it in `Project Settings > Plugins > Dialogue Tool > Rich Text Style Set`.
-4. Select text inside a `TOPIC` or response field.
-5. Right-click and choose `Rich Text Tags > desired style`.
-
-The editor wraps the selection:
-
-```text
-This is <Important>important</> text.
-```
-
-Tag menu row names may contain letters, digits, `_`, `.`, and `-`.
-
-For correct in-game rendering:
-
-- use `RichTextBlock`, not a regular `TextBlock`;
-- assign the same Data Table to its `Text Style Set`;
-- pass text from `OnUpdateText` and `OnUpdateResponses` without stripping tags.
-
-The animated reveal preserves open Rich Text tags and counts supported escape sequences (`&quot;`, `&lt;`, `&gt;`, `&amp;`) as visible characters.
-
-## Blueprint UI Integration
-
-The plugin intentionally does not provide a fixed widget. `Dialogue Manager` publishes state through events, and the project decides how to render it.
-
-### 1. Obtain the manager
-
-In a Player Controller, HUD, Widget Controller, or another suitable object, get the `Dialogue Manager` Game Instance Subsystem and store the reference.
-
-### 2. Bind events before starting
-
-Bind before calling `Start Dialogue`; otherwise, the first text update can be missed.
-
-| Event | Recommended UI handling |
-|---|---|
-| `On Update Text` | Pass `Text` to `RichTextBlock.SetText`. |
-| `On Update Responses` | Clear the response container and create response buttons. |
-| `On Dialogue Finished` | Hide the UI, restore player control, and remove bindings. |
-
-### 3. Build responses
-
-In `On Update Responses`, run a `For Each Loop` over the array:
-
-1. Skip items where `Visibility == Invisible`.
-2. Create a button for every other item and use its `Response` text.
-3. Show but disable a `VisibleFailure` response.
-4. Enable a `VisibleSuccess` response.
-5. Store the original **Array Index** in the created button.
-6. On click, call `Select Response` with that index.
-
-> **Important:** do not renumber responses after filtering `Invisible` entries. `SelectResponse` expects an index from the exact array supplied by `OnUpdateResponses`.
-
-### 4. Handle continue input
-
-Call `Continue Dialogue` when the dialogue body is clicked or the relevant input action is triggered.
-
-- while text is typing, it reveals the full line;
-- while waiting for continue, it advances to the next line;
-- while waiting for a response, it does nothing.
-
-Use `Is Waiting For Continue` to control a “press to continue” indicator.
-
-### 5. Start the dialogue
-
-After creating the UI and binding events, call:
-
-```text
-Start Dialogue(DialogueAsset, Context)
-```
-
-- `DialogueAsset` must be a regular `Dialogue Object`;
-- `Context` can be an NPC, Player Controller, component, or any object required by conditions and actions;
-- a `false` return value means playback could not start.
-
-### 6. Finish or cancel
-
-`Finish Dialogue` immediately clears runtime state and broadcasts `On Dialogue Finished`. Use it for forced UI closure, level changes, or conversation cancellation.
-
-## C++ Integration
-
-### Module dependency
-
-Add the runtime module to `YourGame.Build.cs`:
-
-```csharp
-PrivateDependencyModuleNames.AddRange(new[]
-{
-    "DialogueTool"
-});
-```
-
-If plugin types appear in your module's public headers, put `DialogueTool` in `PublicDependencyModuleNames` instead.
-
-Do not add `DialogueToolEditor` to a game runtime module.
-
-### Obtaining and starting the manager
-
-```cpp
-#include "DialogueManager.h"
-#include "DialogueObject.h"
-#include "Engine/GameInstance.h"
-
-UGameInstance* gameInstance = GetGameInstance();
-UDialogueManager* dialogueManager = gameInstance
-    ? gameInstance->GetSubsystem<UDialogueManager>()
-    : nullptr;
-
-if (dialogueManager && dialogue)
-{
-    dialogueManager->OnUpdateText.AddUniqueDynamic(this, &ThisClass::OnDialogueTextUpdated);
-    dialogueManager->OnUpdateResponses.AddUniqueDynamic(this, &ThisClass::OnDialogueResponsesUpdated);
-    dialogueManager->OnDialogueFinished.AddUniqueDynamic(this, &ThisClass::OnDialogueFinished);
-
-    const bool started = dialogueManager->StartDialogue(dialogue, this);
-    if (!started)
-    {
-        // Hide the UI and remove event bindings.
-    }
-}
-```
-
-Handlers must be declared as `UFUNCTION` methods with exact delegate signatures:
-
-```cpp
-#include "DialogueRoot.h"
-
-// Updates the visible dialogue text.
-UFUNCTION()
-void OnDialogueTextUpdated(const FText& text);
-
-// Rebuilds response controls while preserving source array indices.
-UFUNCTION()
-void OnDialogueResponsesUpdated(const TArray<FDialogueResponse>& responses);
-
-// Handles dialogue completion.
-UFUNCTION()
-void OnDialogueFinished();
-```
-
-Remove event bindings when the UI or owning object is destroyed. To interrupt the conversation, call `FinishDialogue` after unbinding, or handle its completion event before closing the UI.
-
-### C++ conditions and actions
-
-Derive from `UDialogueCondition` or `UDialogueAction` and override:
-
-```cpp
-// Evaluates the dialogue requirement.
-virtual bool ExecuteCondition_Implementation(UObject* context) const override;
-
-// Applies the dialogue side effect.
-virtual void ExecuteAction_Implementation(UObject* context) override;
-```
-
-Properties declared with `UPROPERTY(EditAnywhere)` are editable on their graph instances.
-
-## Runtime API
-
-`UDialogueManager` is a `UGameInstanceSubsystem`, so one instance exists per `GameInstance`.
-
-| Method | Purpose |
-|---|---|
-| `StartDialogue(UDialogueObject*, UObject*)` | Resets previous state and starts the first matching entry. Returns whether playback started. |
-| `ContinueDialogue()` | Completes the current text animation or advances to the next line. |
-| `SelectResponse(int32)` | Selects an available response using its source event index. |
-| `FinishDialogue()` | Immediately ends active playback and broadcasts completion. |
-| `IsWaitingForContinue()` | Returns `true` while runtime expects an explicit `ContinueDialogue` call. |
-
-| Event | Data |
-|---|---|
-| `OnUpdateText` | The currently visible `FText`, including intermediate animation states. |
-| `OnUpdateResponses` | The complete `FDialogueResponse` array, including hidden and disabled responses. |
-| `OnDialogueFinished` | Notification that playback fully completed or was forcibly stopped. |
-
-`FDialogueResponse.Visibility`:
-
-| Value | UI behavior |
-|---|---|
-| `VisibleSuccess` | Show and enable selection. |
-| `VisibleFailure` | Show but disable selection. |
-| `Invisible` | Do not show; preserve all other source indices. |
-
-## Execution Rules
-
-1. `StartDialogue` completely resets any previous conversation.
-2. A library cannot be passed to `StartDialogue`.
-3. Start entries are checked from top to bottom, and every condition in an entry must pass.
-4. Actions on the selected start path run before the first destination node.
-5. `TOPIC` lines are presented in order.
-6. If responses exist, runtime evaluates their visibility and waits for `SelectResponse`.
-7. Without responses, default-output actions run and flow continues automatically.
-8. `SWITCH` selects the first successful branch.
-9. `TRANSIT` temporarily changes the active asset to a library.
-10. `RETURN` restores the root dialogue and continues through the transit's `Return` output.
-11. `FINISH DIALOGUE`, a terminal response, or `FinishDialogue()` clears state and broadcasts `OnDialogueFinished`.
-
-If flow reaches a missing or unconnected destination, the manager publishes a generated terminal response. This prevents playback from becoming stuck, but usually indicates an unfinished graph branch.
-
-Calling `StartDialogue` during active playback resets the previous conversation without a separate `OnDialogueFinished` event for it. If your logic needs that event, call `FinishDialogue` explicitly before starting another dialogue.
-
-## Best Practices
-
-- Keep an unconditional start entry last.
-- Keep an unconditional `SWITCH` branch last.
-- Avoid unassigned condition/action class entries: they are valid but make graphs harder to audit.
-- Pass a meaningful `Context` and use a consistent expected context type across a conversation's conditions and actions.
-- Bind UI events **before** calling `StartDialogue`.
-- Preserve the source index of every response.
-- Use `Add Finish` for an explicit player choice and `FINISH DIALOGUE` for automatic completion.
-- Move repeated flows into a `Dialogue Library`.
-- Reference dialogue assets through `UPROPERTY` or another cook-visible reference so they are included in packaged builds.
-- Check reachability indicators and test every branch with different condition states.
-
-## Troubleshooting
-
-### The plugin or asset types are missing
-
-- Make sure `DialogueTool` is enabled under `Edit > Plugins`.
-- Restart Unreal Editor.
-- Regenerate project files and rebuild the C++ project.
-- Verify that `Plugins/DialogueTool/DialogueTool.uplugin` exists.
-
-### `StartDialogue` returns `false`
-
-- The dialogue is `nullptr`.
-- A `Dialogue Library` was supplied instead of a `Dialogue Object`.
-- The manager has no valid `World`.
-- No `DIALOGUE START` entry passed its conditions.
-- Keep an unconditional fallback start at the bottom.
-
-### Playback starts but the first text update is missing
-
-Events were bound after `StartDialogue`. Create the UI and bind delegates first, then start playback.
-
-### A blank button appears at the end
-
-Set `Response End Dialogue Text` and `Response Return Dialogue Text` in plugin settings.
-
-### A condition always succeeds
-
-- Confirm that `Execute Condition` is overridden in the Blueprint.
-- The base implementation returns `true`.
-- An unassigned condition class is skipped.
-- Check the type and value of `Context`.
-
-### A response selects the wrong branch
-
-The UI used an index produced after filtering hidden responses. Pass the original `Array Index` from `OnUpdateResponses` to `SelectResponse`.
-
-### An unavailable response is still visible
-
-The eye button enables `AlwaysVisible`, so the response should remain visible but disabled. Turn it off to receive `Invisible`, or handle `Visibility` correctly in the UI.
-
-### Rich Text tags are missing from the context menu
-
-- Assign `Rich Text Style Set`.
-- Make sure the table uses `RichTextStyleRow`.
-- Select some text before opening the context menu.
-- Check the row name; only letters, digits, `_`, `.`, and `-` are supported.
-
-### Rich Text markup is displayed literally
-
-Use a `RichTextBlock` and assign the same `Text Style Set`.
-
-### Condition or action parameters are not visible in a node
-
-Mark Blueprint variables as `Instance Editable` or declare C++ properties with `UPROPERTY(EditAnywhere)`.
-
-### A branch unexpectedly ends the dialogue
-
-The flow has no valid continuation, or no `SWITCH` branch passed. Connect the output or add a final unconditional branch.
