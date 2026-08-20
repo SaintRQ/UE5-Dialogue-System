@@ -144,11 +144,18 @@ Blueprint-класс, унаследованный от `UDialogueCondition`. В
 
 Создание: `Content Browser > Add > Dialogue Tool > Dialogue Condition`.
 
+Чтобы видеть конкретную переменную в панели деталей "условия" внутри редактора диалогов - редактора условий - (в одной строке) укажите для переменной тег `EditInstanceOnly` (`Instance Editable` в блюпринте).
+
 ### Dialogue Action
 
 Blueprint-класс, унаследованный от `UDialogueAction`. Выполняет игровую логику при прохождении потока через узел `ACTIONS`.
 
 Создание: `Content Browser > Add > Dialogue Tool > Dialogue Action`.
+
+Чтобы видеть конкретную переменную в панели деталей "действий" внутри редактора диалогов - редактора действий - (в одной строке) укажите для переменной тег EditInstanceOnly (Instance Editable в блюпринте). 
+
+<img width="1006" height="441" alt="2" src="https://github.com/user-attachments/assets/52d810f0-82cf-4fe1-9c3c-1c26774706cf" />
+
 
 ## Узлы графа
 
@@ -738,11 +745,18 @@ A Blueprint class derived from `UDialogueCondition`. It returns `true` or `false
 
 Create it with `Content Browser > Add > Dialogue Tool > Dialogue Condition`.
 
+"To make a specific variable visible in the Details panel of the 'conditions' section inside the dialogue editor (condition editor) in a single row, set the EditInstanceOnly tag for this variable (Instance Editable in Blueprints)."
+
+<img width="1006" height="441" alt="2" src="https://github.com/user-attachments/assets/50dd9a20-aef6-4a79-86c9-37a59dd63c3a" />
+
+
 ### Dialogue Action
 
 A Blueprint class derived from `UDialogueAction`. It performs gameplay logic when flow passes through an `ACTIONS` node.
 
 Create it with `Content Browser > Add > Dialogue Tool > Dialogue Action`.
+
+"To make a specific variable visible in the Details panel of the 'actions' section inside the dialogue editor (action editor) in a single row, set the EditInstanceOnly tag for this variable (Instance Editable in Blueprints)."
 
 ## Graph Nodes
 
