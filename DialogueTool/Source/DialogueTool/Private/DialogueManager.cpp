@@ -7,8 +7,10 @@
 #include "DialogueLibraryObject.h"
 #include "DialogueObject.h"
 #include "DialogueToolSettings.h"
+#include "DialogueProvider.h"
 #include "Containers/StringConv.h"
 #include "Engine/World.h"
+#include "Sound/SoundBase.h"
 
 void UDialogueManager::Deinitialize()
 {
@@ -16,7 +18,10 @@ void UDialogueManager::Deinitialize()
 	Super::Deinitialize();
 }
 
-bool UDialogueManager::StartDialogue(UDialogueObject* dialogue, UObject* context)
+bool UDialogueManager::StartDialogue(
+	UDialogueObject* dialogue,
+	const FDialogueCache& cache,
+	UObject* context)
 {
 	ResetDialogueState();
 	if (!dialogue || dialogue->IsA<UDialogueLibraryObject>() || !GetWorld())
@@ -26,6 +31,7 @@ bool UDialogueManager::StartDialogue(UDialogueObject* dialogue, UObject* context
 
 	ActiveDialogue = dialogue;
 	DialogueContext = context;
+	DialogueCache = cache;
 	for (const FDialogueInit& init : dialogue->GetDialogueInitData())
 	{
 		if (AreConditionsMet(init.Conditions))
@@ -83,6 +89,10 @@ void UDialogueManager::SelectResponse(int32 responseIndex)
 	const FDialogueResponse response = CurrentResponses[responseIndex];
 	CurrentResponses.Reset();
 	OnUpdateResponses.Broadcast(CurrentResponses);
+	if (USoundBase* sound = response.Sound.LoadSynchronous())
+	{
+		OnPlaySound.Broadcast(sound);
+	}
 	BeginActions(response.Actions, response.NextNode, response.FinishDialogue);
 }
 
@@ -93,8 +103,10 @@ void UDialogueManager::FinishDialogue()
 		return;
 	}
 
+	DialogueCache.IsFirstTalk = false;
+	FDialogueCache cache = MoveTemp(DialogueCache);
 	ResetDialogueState();
-	OnDialogueFinished.Broadcast();
+	OnDialogueFinished.Broadcast(cache);
 }
 
 bool UDialogueManager::IsWaitingForContinue() const
@@ -122,6 +134,13 @@ UObject* UDialogueManager::GetExecutionContext() const
 	return DialogueContext.IsValid() ? DialogueContext.Get() : GetGameInstance();
 }
 
+FText UDialogueManager::ResolveProviderText(const UDialogueProvider* provider) const
+{
+	return provider
+		? provider->ExecuteProvider(GetExecutionContext(), DialogueCache)
+		: FText::GetEmpty();
+}
+
 void UDialogueManager::StartCurrentText()
 {
 	const FDialogueNode* dialogueNode = ActiveDialogue
@@ -133,7 +152,17 @@ void UDialogueManager::StartCurrentText()
 		return;
 	}
 
-	CurrentSourceText = dialogueNode->RootText[CurrentTextIndex];
+	CurrentSourceText = dialogueNode->RootTextProviders.IsValidIndex(CurrentTextIndex)
+		&& dialogueNode->RootTextProviders[CurrentTextIndex]
+		? ResolveProviderText(dialogueNode->RootTextProviders[CurrentTextIndex])
+		: dialogueNode->RootText[CurrentTextIndex];
+	if (dialogueNode->RootSounds.IsValidIndex(CurrentTextIndex))
+	{
+		if (USoundBase* sound = dialogueNode->RootSounds[CurrentTextIndex].LoadSynchronous())
+		{
+			OnPlaySound.Broadcast(sound);
+		}
+	}
 	CurrentSourceString = CurrentSourceText.ToString();
 	CurrentRevealOffsets.Reset();
 	CurrentRevealOpenTags.Reset();
@@ -301,6 +330,7 @@ void UDialogueManager::AdvanceToNode(int64 nodeId)
 
 		if (const FDialogueNode* dialogueNode = ActiveDialogue->FindDialogueNode(nodeId))
 		{
+			DialogueCache.TopicsMemory.Add(nodeId);
 			CurrentNodeId = nodeId;
 			CurrentTextIndex = 0;
 			if (dialogueNode->RootText.IsEmpty())
@@ -411,9 +441,9 @@ void UDialogueManager::PublishResponses(const TArray<FDialogueResponse>& respons
 	CurrentResponses.Reset(responses.Num());
 	const auto addResponse = [this](const FDialogueResponse& response)
 	{
-		FDialogueResponse& currentResponse = CurrentResponses.Add_GetRef(response);
 		if (response.FinishDialogue)
 		{
+			FDialogueResponse& currentResponse = CurrentResponses.Add_GetRef(response);
 			const UDialogueToolSettings* settings = GetDefault<UDialogueToolSettings>();
 			currentResponse.Response = ActiveDialogue && ActiveDialogue->IsA<UDialogueLibraryObject>()
 				? settings->ResponseReturnDialogueText
@@ -423,16 +453,25 @@ void UDialogueManager::PublishResponses(const TArray<FDialogueResponse>& respons
 			return;
 		}
 
-		if (AreConditionsMet(response.Conditions))
+		const bool conditionsMet = AreConditionsMet(response.Conditions);
+		if (!conditionsMet && !response.AlwaysVisible)
 		{
-			currentResponse.Visibility = EDialogueConditionVisibilityResult::VisibleSuccess;
+			return;
 		}
-		else
+
+		FDialogueResponse& currentResponse = CurrentResponses.Add_GetRef(response);
+		if (!response.CustomTextId.IsNone())
 		{
-			currentResponse.Visibility = response.AlwaysVisible
-				? EDialogueConditionVisibilityResult::VisibleFailure
-				: EDialogueConditionVisibilityResult::Invisible;
+			const FText* customText = GetDefault<UDialogueToolSettings>()->ResponseCustomTextList.Find(response.CustomTextId);
+			currentResponse.Response = customText ? *customText : FText::GetEmpty();
 		}
+		else if (response.ResponseProvider)
+		{
+			currentResponse.Response = ResolveProviderText(response.ResponseProvider);
+		}
+		currentResponse.Visibility = conditionsMet
+			? EDialogueConditionVisibilityResult::VisibleSuccess
+			: EDialogueConditionVisibilityResult::VisibleFailure;
 	};
 
 	for (const FDialogueResponse& response : responses)
@@ -547,6 +586,7 @@ void UDialogueManager::ResetDialogueState()
 	DialogueContext.Reset();
 	PendingActions.Reset();
 	CurrentResponses.Reset();
+	DialogueCache = FDialogueCache();
 	PreviousDialogue = nullptr;
 	PreviousReturnActions.Reset();
 	PlaybackState = EPlaybackState::Inactive;

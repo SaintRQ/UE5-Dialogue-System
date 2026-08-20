@@ -183,7 +183,11 @@ FText UDialogueGraphSwitcherNode::GetNodeTitle(ENodeTitleType::Type titleType) c
 
 FText UDialogueGraphSwitcherNode::GetTooltipText() const
 {
-	return LOCTEXT("NodeTooltip", "Routes dialogue flow through the first matching condition.");
+	return LOCTEXT(
+		"NodeTooltip",
+		"Selects one outgoing dialogue branch using its condition lists.\n"
+		"Branches are evaluated from top to bottom, and only the first branch whose conditions all pass is used.\n"
+		"That branch's actions execute in order before flow continues through its output.");
 }
 
 FDialogueSwitcher* UDialogueGraphSwitcherNode::GetSwitcherData()

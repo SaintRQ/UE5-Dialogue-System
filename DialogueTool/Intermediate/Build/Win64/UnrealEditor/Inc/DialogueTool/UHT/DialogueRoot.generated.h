@@ -16,8 +16,17 @@
 
 PRAGMA_DISABLE_DEPRECATION_WARNINGS
 
+// ********** Begin ScriptStruct FDialogueCache ****************************************************
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_26_GENERATED_BODY \
+	friend struct Z_Construct_UScriptStruct_FDialogueCache_Statics; \
+	DIALOGUETOOL_API static class UScriptStruct* StaticStruct();
+
+
+struct FDialogueCache;
+// ********** End ScriptStruct FDialogueCache ******************************************************
+
 // ********** Begin ScriptStruct FDialogueSwitcherCondition ****************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_24_GENERATED_BODY \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_41_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FDialogueSwitcherCondition_Statics; \
 	DIALOGUETOOL_API static class UScriptStruct* StaticStruct();
 
@@ -26,7 +35,7 @@ struct FDialogueSwitcherCondition;
 // ********** End ScriptStruct FDialogueSwitcherCondition ******************************************
 
 // ********** Begin ScriptStruct FDialogueSwitcher *************************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_42_GENERATED_BODY \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_59_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FDialogueSwitcher_Statics; \
 	static class UScriptStruct* StaticStruct();
 
@@ -35,7 +44,7 @@ struct FDialogueSwitcher;
 // ********** End ScriptStruct FDialogueSwitcher ***************************************************
 
 // ********** Begin ScriptStruct FDialogueTransit **************************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_54_GENERATED_BODY \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_71_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FDialogueTransit_Statics; \
 	DIALOGUETOOL_API static class UScriptStruct* StaticStruct();
 
@@ -44,7 +53,7 @@ struct FDialogueTransit;
 // ********** End ScriptStruct FDialogueTransit ****************************************************
 
 // ********** Begin ScriptStruct FDialogueInit *****************************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_69_GENERATED_BODY \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_86_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FDialogueInit_Statics; \
 	DIALOGUETOOL_API static class UScriptStruct* StaticStruct();
 
@@ -53,7 +62,7 @@ struct FDialogueInit;
 // ********** End ScriptStruct FDialogueInit *******************************************************
 
 // ********** Begin ScriptStruct FDialogueResponse *************************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_87_GENERATED_BODY \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_104_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FDialogueResponse_Statics; \
 	DIALOGUETOOL_API static class UScriptStruct* StaticStruct();
 
@@ -62,7 +71,7 @@ struct FDialogueResponse;
 // ********** End ScriptStruct FDialogueResponse ***************************************************
 
 // ********** Begin ScriptStruct FDialogueNode *****************************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_115_GENERATED_BODY \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_141_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FDialogueNode_Statics; \
 	DIALOGUETOOL_API static class UScriptStruct* StaticStruct();
 
@@ -76,8 +85,7 @@ struct FDialogueNode;
 // ********** Begin Enum EDialogueConditionVisibilityResult ****************************************
 #define FOREACH_ENUM_EDIALOGUECONDITIONVISIBILITYRESULT(op) \
 	op(EDialogueConditionVisibilityResult::VisibleSuccess) \
-	op(EDialogueConditionVisibilityResult::VisibleFailure) \
-	op(EDialogueConditionVisibilityResult::Invisible) 
+	op(EDialogueConditionVisibilityResult::VisibleFailure) 
 
 enum class EDialogueConditionVisibilityResult : uint8;
 template<> struct TIsUEnumClass<EDialogueConditionVisibilityResult> { enum { Value = true }; };

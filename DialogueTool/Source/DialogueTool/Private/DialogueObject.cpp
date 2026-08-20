@@ -24,11 +24,30 @@ void UDialogueObject::PostLoad()
 		{
 			node.RootText.Add(FText::GetEmpty());
 		}
+		node.RootSounds.SetNum(node.RootText.Num());
+		node.RootTextProviders.SetNum(node.RootText.Num());
+		for (int32 textIndex = 0; textIndex < node.RootText.Num(); ++textIndex)
+		{
+			if (node.RootTextProviders[textIndex])
+			{
+				node.RootText[textIndex] = FText::GetEmpty();
+			}
+		}
 
 		int32 finishIndex = INDEX_NONE;
 		for (int32 responseIndex = 0; responseIndex < node.Response.Num();)
 		{
 			FDialogueResponse& response = node.Response[responseIndex];
+			if (!response.CustomTextId.IsNone())
+			{
+				response.ResponseProvider = nullptr;
+				response.Response = FText::GetEmpty();
+			}
+			else if (response.ResponseProvider)
+			{
+				response.Response = FText::GetEmpty();
+			}
+
 			if (!response.FinishDialogue)
 			{
 				++responseIndex;
@@ -43,6 +62,8 @@ void UDialogueObject::PostLoad()
 
 			finishIndex = responseIndex++;
 			response.Response = FText::GetEmpty();
+			response.CustomTextId = NAME_None;
+			response.ResponseProvider = nullptr;
 			response.Conditions.Reset();
 			response.AlwaysVisible = true;
 			response.Visibility = EDialogueConditionVisibilityResult::VisibleSuccess;
@@ -82,6 +103,8 @@ FDialogueNode& UDialogueObject::AddDialogueNode(int64 nodeId)
 	{
 		dialogueNode.RootText.Add(FText::GetEmpty());
 	}
+	dialogueNode.RootSounds.SetNum(dialogueNode.RootText.Num());
+	dialogueNode.RootTextProviders.SetNum(dialogueNode.RootText.Num());
 	return dialogueNode;
 }
 

@@ -23,6 +23,7 @@ void SDialogueGraphFinishNode::Construct(
 {
 	GraphNode = finishNode;
 	SetCursor(EMouseCursor::CardinalCross);
+	SetToolTipText(finishNode ? finishNode->GetTooltipText() : FText::GetEmpty());
 	UpdateGraphNode();
 }
 

@@ -137,8 +137,16 @@ FText UDialogueGraphInitNode::GetNodeTitle(ENodeTitleType::Type titleType) const
 FText UDialogueGraphInitNode::GetTooltipText() const
 {
 	return GetDialogueObject() && GetDialogueObject()->IsA<UDialogueLibraryObject>()
-		? LOCTEXT("LibraryNodeTooltip", "Defines named library entry points and their conditions.")
-		: LOCTEXT("NodeTooltip", "Defines named dialogue entry points and their conditions.");
+		? LOCTEXT(
+			"LibraryNodeTooltip",
+			"Defines the entry branches of this dialogue library.\n"
+			"Branches are checked from top to bottom; the first branch whose conditions pass is selected.\n"
+			"Its actions execute in order before dialogue flow continues through the corresponding output.")
+		: LOCTEXT(
+			"NodeTooltip",
+			"Defines the entry branches used when this dialogue starts.\n"
+			"Branches are checked from top to bottom; the first branch whose conditions pass is selected.\n"
+			"Its actions execute in order before dialogue flow continues through the corresponding output.");
 }
 
 TArray<FDialogueInit>* UDialogueGraphInitNode::GetInitData()

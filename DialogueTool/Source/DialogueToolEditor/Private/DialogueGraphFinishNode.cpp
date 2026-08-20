@@ -37,8 +37,14 @@ FText UDialogueGraphFinishNode::GetNodeTitle(ENodeTitleType::Type titleType) con
 FText UDialogueGraphFinishNode::GetTooltipText() const
 {
 	return IsReturnNode()
-		? LOCTEXT("ReturnNodeTooltip", "Returns to the calling dialogue after all preceding actions execute.")
-		: LOCTEXT("NodeTooltip", "Finishes the active dialogue after all preceding actions execute.");
+		? LOCTEXT(
+			"ReturnNodeTooltip",
+			"Completes the current dialogue library and returns to the dialogue that entered it.\n"
+			"The Transit node then executes its Return actions and continues through its Return output.")
+		: LOCTEXT(
+			"NodeTooltip",
+			"Finishes the active root dialogue after all preceding actions have executed.\n"
+			"The dialogue manager updates the cache, clears playback state, and broadcasts the finish event.");
 }
 
 UEdGraphPin* UDialogueGraphFinishNode::GetInputPin() const

@@ -7,12 +7,14 @@
 #include "DialogueGraphInitNode.h"
 #include "DialogueGraphNode.h"
 #include "DialogueGraphRerouteNode.h"
+#include "DialogueGraphResponseProviderNode.h"
 #include "DialogueGraphSwitcherNode.h"
 #include "DialogueGraphTransitNode.h"
 #include "SDialogueGraphActionNode.h"
 #include "SDialogueGraphFinishNode.h"
 #include "SDialogueGraphInitNode.h"
 #include "SDialogueGraphNode.h"
+#include "SDialogueGraphResponseProviderNode.h"
 #include "SDialogueGraphSwitcherNode.h"
 #include "SDialogueGraphTransitNode.h"
 #include "SGraphNodeKnot.h"
@@ -52,6 +54,11 @@ TSharedPtr<SGraphNode> FDialogueGraphNodeFactory::CreateNode(UEdGraphNode* node)
 	if (UDialogueGraphRerouteNode* rerouteNode = Cast<UDialogueGraphRerouteNode>(node))
 	{
 		return SNew(SGraphNodeKnot, rerouteNode);
+	}
+
+	if (UDialogueGraphResponseProviderNode* responseProviderNode = Cast<UDialogueGraphResponseProviderNode>(node))
+	{
+		return SNew(SDialogueGraphResponseProviderNode, responseProviderNode);
 	}
 
 	return nullptr;

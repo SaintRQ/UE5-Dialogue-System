@@ -2,18 +2,23 @@
 
 #include "SDialogueGraphNode.h"
 
+#include "AssetRegistry/AssetData.h"
 #include "DialogueGraphNode.h"
+#include "DialogueGraphResponseProviderNode.h"
 #include "DialogueLibraryObject.h"
 #include "DialogueRoot.h"
 #include "DialogueToolSettings.h"
 #include "EdGraph/EdGraph.h"
 #include "Framework/Application/SlateApplication.h"
+#include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "PropertyCustomizationHelpers.h"
 #include "SDialogueAddButton.h"
 #include "SDialogueConditionPopup.h"
 #include "SDialogueGraphInitStatus.h"
 #include "SDialogueRichTextEditor.h"
 #include "SGraphPanel.h"
 #include "SGraphPin.h"
+#include "Sound/SoundBase.h"
 #include "Styling/AppStyle.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Input/SButton.h"
@@ -32,6 +37,7 @@ void SDialogueGraphNode::Construct(const FArguments& arguments, UDialogueGraphNo
 {
 	GraphNode = dialogueNode;
 	SetCursor(EMouseCursor::CardinalCross);
+	SetToolTipText(dialogueNode ? dialogueNode->GetTooltipText() : FText::GetEmpty());
 	UpdateGraphNode();
 }
 
@@ -46,6 +52,7 @@ void SDialogueGraphNode::UpdateGraphNode()
 	const bool bLibrary = dialogueNode && dialogueNode->GetGraph()
 		&& dialogueNode->GetGraph()->GetTypedOuter<UDialogueLibraryObject>();
 	const FDialogueNode* dialogueData = dialogueNode ? dialogueNode->GetDialogueData() : nullptr;
+	bool bHasProvider = false;
 	TSharedRef<SGridPanel> content = SNew(SGridPanel)
 		.FillColumn(0, 1.0f);
 	TSharedRef<SVerticalBox> textContent = SNew(SVerticalBox);
@@ -65,6 +72,19 @@ void SDialogueGraphNode::UpdateGraphNode()
 				[
 					sectionContent
 				]
+			];
+	};
+	const auto createSoundButton = [this](bool response, int32 entryIndex) -> TSharedRef<SWidget>
+	{
+		return SNew(SButton)
+			.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+			.ContentPadding(2.0f)
+			.ToolTipText(LOCTEXT("SoundTooltip", "Select a sound for this entry."))
+			.OnClicked(this, &SDialogueGraphNode::OnOpenSound, response, entryIndex)
+			[
+				SNew(SImage)
+				.Image(FAppStyle::GetBrush("Sequencer.Tracks.Audio"))
+				.ColorAndOpacity(this, &SDialogueGraphNode::GetSoundIconColor, response, entryIndex)
 			];
 	};
 
@@ -117,51 +137,118 @@ void SDialogueGraphNode::UpdateGraphNode()
 	{
 		for (int32 textIndex = 0; textIndex < dialogueData->RootText.Num(); ++textIndex)
 		{
+			UEdGraphPin* providerPin = dialogueNode->GetRootTextProviderInputPin(textIndex);
+			const UDialogueGraphResponseProviderNode* providerNode = providerPin && !providerPin->LinkedTo.IsEmpty()
+				? Cast<UDialogueGraphResponseProviderNode>(providerPin->LinkedTo[0]->GetOwningNode())
+				: nullptr;
+			const bool bProviderText = providerNode != nullptr;
+			bHasProvider |= bProviderText;
+			TSharedRef<SWidget> textEditor = SNew(SDialogueRichTextEditor)
+				.Text(dialogueData->RootText[textIndex])
+				.HintText(LOCTEXT("RootTextHint", "Dialogue text"))
+				.AutoWrapText(true)
+				.OnTextCommitted(this, &SDialogueGraphNode::OnRootTextCommitted, textIndex);
+			if (bProviderText)
+			{
+				const UClass* providerClass = providerNode->GetResponseProviderClass();
+				const FText providerText = providerClass
+					? FText::Format(
+						LOCTEXT("ProviderRootText", "Provider: {0}"),
+						providerClass->GetDisplayNameText())
+					: LOCTEXT("EmptyProviderRootText", "Provider");
+				textEditor = SNew(SBorder)
+					.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
+					.BorderBackgroundColor(FLinearColor(0.025f, 0.2f, 0.38f))
+					.Padding(6.0f, 4.0f)
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(providerText)
+						.Font(FCoreStyle::GetDefaultFontStyle("Bold", 9))
+						.ColorAndOpacity(FLinearColor(0.4f, 0.82f, 1.0f))
+						.AutoWrapText(true)
+					];
+			}
+
+			TSharedRef<SHorizontalBox> textRow = SNew(SHorizontalBox);
+			if (providerPin)
+			{
+				textRow->AddSlot()
+				.AutoWidth()
+				.VAlign(VAlign_Center)
+				.Padding(0.0f, 0.0f, 4.0f, 0.0f)
+				[
+					CreateDialoguePin(providerPin)
+				];
+			}
+
+			textRow->AddSlot()
+			.AutoWidth()
+			.VAlign(VAlign_Center)
+			.Padding(0.0f, 0.0f, 6.0f, 0.0f)
+			[
+				SNew(STextBlock)
+				.Text(FText::AsNumber(textIndex + 1))
+			];
+
+			textRow->AddSlot()
+			.FillWidth(1.0f)
+			[
+				SNew(SBox)
+				.WidthOverride(280.0f)
+				.MinDesiredHeight(48.0f)
+				[
+					textEditor
+				]
+			];
+
+			textRow->AddSlot()
+			.AutoWidth()
+			.VAlign(VAlign_Center)
+			.Padding(4.0f, 0.0f, 0.0f, 0.0f)
+			[
+				createSoundButton(false, textIndex)
+			];
+
+			textRow->AddSlot()
+			.AutoWidth()
+			.VAlign(VAlign_Center)
+			.Padding(4.0f, 0.0f, 0.0f, 0.0f)
+			[
+				SNew(SButton)
+				.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+				.IsEnabled(dialogueData->RootText.Num() > 1)
+				.ToolTipText(LOCTEXT("RemoveRootTextTooltip", "Remove this text entry."))
+				.OnClicked(this, &SDialogueGraphNode::OnRemoveRootText, textIndex)
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("Remove", "-"))
+				]
+			];
+
+			TSharedRef<SWidget> textRowWidget = textRow;
+			if (bProviderText)
+			{
+				textRowWidget = SNew(SBorder)
+					.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
+					.BorderBackgroundColor(FLinearColor(0.04f, 0.48f, 0.78f))
+					.Padding(2.0f)
+					[
+						SNew(SBorder)
+						.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
+						.BorderBackgroundColor(FLinearColor(0.008f, 0.025f, 0.055f))
+						.Padding(6.0f, 3.0f)
+						[
+							textRow
+						]
+					];
+			}
+
 			textContent->AddSlot()
 			.AutoHeight()
 			.Padding(2.0f)
 			[
-				SNew(SHorizontalBox)
-
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				.VAlign(VAlign_Center)
-				.Padding(0.0f, 0.0f, 6.0f, 0.0f)
-				[
-					SNew(STextBlock)
-					.Text(FText::AsNumber(textIndex + 1))
-				]
-
-				+ SHorizontalBox::Slot()
-				.FillWidth(1.0f)
-				[
-					SNew(SBox)
-					.WidthOverride(280.0f)
-					.MinDesiredHeight(48.0f)
-					[
-					SNew(SDialogueRichTextEditor)
-						.Text(dialogueData->RootText[textIndex])
-						.HintText(LOCTEXT("RootTextHint", "Dialogue text"))
-						.AutoWrapText(true)
-						.OnTextCommitted(this, &SDialogueGraphNode::OnRootTextCommitted, textIndex)
-					]
-				]
-
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				.VAlign(VAlign_Center)
-				.Padding(4.0f, 0.0f, 0.0f, 0.0f)
-				[
-					SNew(SButton)
-					.ButtonStyle(FAppStyle::Get(), "SimpleButton")
-					.IsEnabled(dialogueData->RootText.Num() > 1)
-					.ToolTipText(LOCTEXT("RemoveRootTextTooltip", "Remove this text entry."))
-					.OnClicked(this, &SDialogueGraphNode::OnRemoveRootText, textIndex)
-					[
-						SNew(STextBlock)
-						.Text(LOCTEXT("Remove", "-"))
-					]
-				]
+				textRowWidget
 			];
 		}
 	}
@@ -226,7 +313,25 @@ void SDialogueGraphNode::UpdateGraphNode()
 		for (int32 responseIndex = 0; responseIndex < responseCount; ++responseIndex)
 		{
 			const bool bFinishResponse = dialogueData->Response[responseIndex].FinishDialogue;
+			const FName customTextId = dialogueData->Response[responseIndex].CustomTextId;
+			const bool bCustomResponse = !customTextId.IsNone();
+			UEdGraphPin* providerPin = dialogueNode->GetResponseProviderInputPin(responseIndex);
+			const UDialogueGraphResponseProviderNode* providerNode = providerPin && !providerPin->LinkedTo.IsEmpty()
+				? Cast<UDialogueGraphResponseProviderNode>(providerPin->LinkedTo[0]->GetOwningNode())
+				: nullptr;
+			const bool bProviderResponse = providerNode != nullptr;
+			bHasProvider |= bProviderResponse;
 			TSharedRef<SHorizontalBox> responseRow = SNew(SHorizontalBox);
+			if (providerPin)
+			{
+				responseRow->AddSlot()
+				.AutoWidth()
+				.VAlign(VAlign_Center)
+				.Padding(0.0f, 0.0f, 4.0f, 0.0f)
+				[
+					CreateDialoguePin(providerPin)
+				];
+			}
 
 			responseRow->AddSlot()
 			.AutoWidth()
@@ -265,6 +370,51 @@ void SDialogueGraphNode::UpdateGraphNode()
 						})
 						.Font(FCoreStyle::GetDefaultFontStyle("Bold", 9))
 						.ColorAndOpacity(FLinearColor(1.0f, 0.58f, 0.36f))
+						.AutoWrapText(true)
+					];
+			}
+			else if (bCustomResponse)
+			{
+				responseText = SNew(SBorder)
+					.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
+					.BorderBackgroundColor(FLinearColor(0.018f, 0.28f, 0.1f))
+					.Padding(6.0f, 4.0f)
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text_Lambda([customTextId]()
+						{
+							const FText* customText = GetDefault<UDialogueToolSettings>()
+								->ResponseCustomTextList.Find(customTextId);
+							return customText
+								? *customText
+								: FText::Format(
+									LOCTEXT("MissingCustomResponseText", "Missing custom text: {0}"),
+									FText::FromName(customTextId));
+						})
+						.Font(FCoreStyle::GetDefaultFontStyle("Bold", 9))
+						.ColorAndOpacity(FLinearColor(0.42f, 1.0f, 0.6f))
+						.AutoWrapText(true)
+					];
+			}
+			else if (bProviderResponse)
+			{
+				const UClass* providerClass = providerNode->GetResponseProviderClass();
+				const FText providerText = providerClass
+					? FText::Format(
+						LOCTEXT("ProviderResponseText", "Provider: {0}"),
+						providerClass->GetDisplayNameText())
+					: LOCTEXT("EmptyProviderResponseText", "Provider");
+				responseText = SNew(SBorder)
+					.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
+					.BorderBackgroundColor(FLinearColor(0.025f, 0.2f, 0.38f))
+					.Padding(6.0f, 4.0f)
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text(providerText)
+						.Font(FCoreStyle::GetDefaultFontStyle("Bold", 9))
+						.ColorAndOpacity(FLinearColor(0.4f, 0.82f, 1.0f))
 						.AutoWrapText(true)
 					];
 			}
@@ -327,6 +477,14 @@ void SDialogueGraphNode::UpdateGraphNode()
 			responseRow->AddSlot()
 			.AutoWidth()
 			.VAlign(VAlign_Center)
+			.Padding(4.0f, 0.0f, 0.0f, 0.0f)
+			[
+				createSoundButton(true, responseIndex)
+			];
+
+			responseRow->AddSlot()
+			.AutoWidth()
+			.VAlign(VAlign_Center)
 			.Padding(4.0f, 0.0f)
 			[
 				SNew(SButton)
@@ -341,16 +499,24 @@ void SDialogueGraphNode::UpdateGraphNode()
 
 			const int32 responseRowIndex = responseHeaderRow + responseIndex + 1;
 			TSharedRef<SWidget> responseRowWidget = responseRow;
-			if (bFinishResponse)
+			if (bFinishResponse || bCustomResponse || bProviderResponse)
 			{
 				responseRowWidget = SNew(SBorder)
 					.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-					.BorderBackgroundColor(FLinearColor(0.78f, 0.16f, 0.055f))
+					.BorderBackgroundColor(bFinishResponse
+						? FLinearColor(0.78f, 0.16f, 0.055f)
+						: bCustomResponse
+							? FLinearColor(0.04f, 0.7f, 0.24f)
+							: FLinearColor(0.04f, 0.48f, 0.78f))
 					.Padding(2.0f)
 					[
 						SNew(SBorder)
 						.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-						.BorderBackgroundColor(FLinearColor(0.055f, 0.014f, 0.008f))
+						.BorderBackgroundColor(bFinishResponse
+							? FLinearColor(0.055f, 0.014f, 0.008f)
+							: bCustomResponse
+								? FLinearColor(0.006f, 0.04f, 0.018f)
+								: FLinearColor(0.008f, 0.025f, 0.055f))
 						.Padding(6.0f, 3.0f)
 						[
 							responseRow
@@ -384,6 +550,15 @@ void SDialogueGraphNode::UpdateGraphNode()
 		SNew(SDialogueAddButton)
 		.Color(FLinearColor(0.06f, 0.38f, 0.92f))
 		.OnClicked(this, &SDialogueGraphNode::OnAddResponse)
+	];
+	addResponseButtons->AddSlot()
+	.AutoWidth()
+	.Padding(2.0f)
+	[
+		SNew(SDialogueAddButton)
+	.Color(FLinearColor(0.04f, 0.7f, 0.24f))
+		.Text(LOCTEXT("AddCustom", "Add Custom"))
+		.OnClicked(this, &SDialogueGraphNode::OnOpenCustomResponseMenu)
 	];
 	if (!bHasFinishResponse)
 	{
@@ -433,7 +608,7 @@ void SDialogueGraphNode::UpdateGraphNode()
 
 			+ SHorizontalBox::Slot()
 			.AutoWidth()
-			.VAlign(VAlign_Center)
+			.VAlign(bHasProvider ? VAlign_Top : VAlign_Center)
 			.Padding(2.0f)
 			[
 				inputWidget
@@ -515,6 +690,20 @@ FSlateColor SDialogueGraphNode::GetResponseAlwaysVisibleIconColor(int32 response
 		: FLinearColor(0.5f, 0.53f, 0.58f, 0.4f);
 }
 
+FSlateColor SDialogueGraphNode::GetSoundIconColor(bool response, int32 entryIndex) const
+{
+	const UDialogueGraphNode* dialogueNode = GetDialogueNode();
+	const FDialogueNode* dialogueData = dialogueNode ? dialogueNode->GetDialogueData() : nullptr;
+	const bool bHasSound = dialogueData && (response
+		? dialogueData->Response.IsValidIndex(entryIndex)
+			&& !dialogueData->Response[entryIndex].Sound.IsNull()
+		: dialogueData->RootSounds.IsValidIndex(entryIndex)
+			&& !dialogueData->RootSounds[entryIndex].IsNull());
+	return bHasSound
+		? FLinearColor(0.22f, 0.72f, 1.0f)
+		: FLinearColor(0.5f, 0.53f, 0.58f, 0.4f);
+}
+
 FReply SDialogueGraphNode::OnAddRootText()
 {
 	if (UDialogueGraphNode* dialogueNode = GetDialogueNode())
@@ -554,6 +743,63 @@ FReply SDialogueGraphNode::OnAddResponse()
 	}
 
 	return FReply::Handled();
+}
+
+FReply SDialogueGraphNode::OnOpenCustomResponseMenu()
+{
+	const UDialogueToolSettings* settings = GetDefault<UDialogueToolSettings>();
+	TArray<FName> customTextIds;
+	settings->ResponseCustomTextList.GenerateKeyArray(customTextIds);
+	customTextIds.Sort([](const FName& left, const FName& right)
+	{
+		return left.LexicalLess(right);
+	});
+
+	FMenuBuilder menuBuilder(true, nullptr);
+	if (customTextIds.IsEmpty())
+	{
+		menuBuilder.AddMenuEntry(
+			LOCTEXT("NoCustomText", "No custom text configured"),
+			FText::GetEmpty(),
+			FSlateIcon(),
+			FUIAction(
+				FExecuteAction(),
+				FCanExecuteAction::CreateLambda([]()
+				{
+					return false;
+				})));
+	}
+	else
+	{
+		for (const FName customTextId : customTextIds)
+		{
+			menuBuilder.AddMenuEntry(
+				FText::FromName(customTextId),
+				settings->ResponseCustomTextList.FindChecked(customTextId),
+				FSlateIcon(),
+				FUIAction(FExecuteAction::CreateSP(
+					this,
+					&SDialogueGraphNode::OnAddCustomResponse,
+					customTextId)));
+		}
+	}
+
+	FSlateApplication::Get().PushMenu(
+		AsShared(),
+		FWidgetPath(),
+		menuBuilder.MakeWidget(),
+		FSlateApplication::Get().GetCursorPos(),
+		FPopupTransitionEffect(FPopupTransitionEffect::ContextMenu));
+	return FReply::Handled();
+}
+
+void SDialogueGraphNode::OnAddCustomResponse(FName customTextId)
+{
+	if (UDialogueGraphNode* dialogueNode = GetDialogueNode())
+	{
+		dialogueNode->AddResponse(customTextId);
+		UpdateGraphNode();
+	}
 }
 
 FReply SDialogueGraphNode::OnAddFinishResponse()
@@ -633,6 +879,91 @@ FReply SDialogueGraphNode::OnOpenResponseConditions(int32 responseIndex)
 			FSlateApplication::Get().GetCursorPos(),
 			FPopupTransitionEffect(FPopupTransitionEffect::ContextMenu));
 	}
+
+	return FReply::Handled();
+}
+
+FReply SDialogueGraphNode::OnOpenSound(bool response, int32 entryIndex)
+{
+	UDialogueGraphNode* dialogueNode = GetDialogueNode();
+	const FDialogueNode* dialogueData = dialogueNode ? dialogueNode->GetDialogueData() : nullptr;
+	if (!dialogueData || (response
+		? !dialogueData->Response.IsValidIndex(entryIndex)
+		: !dialogueData->RootText.IsValidIndex(entryIndex)))
+	{
+		return FReply::Handled();
+	}
+
+	const TWeakObjectPtr<UDialogueGraphNode> weakNode = dialogueNode;
+	FSlateApplication::Get().PushMenu(
+		AsShared(),
+		FWidgetPath(),
+		SNew(SBorder)
+		.BorderImage(FAppStyle::GetBrush("Menu.Background"))
+		.Padding(8.0f)
+		[
+			SNew(SVerticalBox)
+
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(2.0f, 2.0f, 2.0f, 6.0f)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("SoundTitle", "Sound"))
+				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
+			]
+
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			[
+				SNew(SBox)
+				.WidthOverride(360.0f)
+				[
+					SNew(SObjectPropertyEntryBox)
+					.AllowedClass(USoundBase::StaticClass())
+					.ObjectPath_Lambda([weakNode, response, entryIndex]()
+					{
+						const UDialogueGraphNode* node = weakNode.Get();
+						const FDialogueNode* data = node ? node->GetDialogueData() : nullptr;
+						if (!data)
+						{
+							return FString();
+						}
+
+						if (response)
+						{
+							return data->Response.IsValidIndex(entryIndex)
+								? data->Response[entryIndex].Sound.ToSoftObjectPath().ToString()
+								: FString();
+						}
+
+						return data->RootSounds.IsValidIndex(entryIndex)
+							? data->RootSounds[entryIndex].ToSoftObjectPath().ToString()
+							: FString();
+					})
+					.OnObjectChanged_Lambda([weakNode, response, entryIndex](const FAssetData& assetData)
+					{
+						if (UDialogueGraphNode* node = weakNode.Get())
+						{
+							const TSoftObjectPtr<USoundBase> sound(assetData.GetSoftObjectPath());
+							if (response)
+							{
+								node->SetResponseSound(entryIndex, sound);
+							}
+							else
+							{
+								node->SetRootSound(entryIndex, sound);
+							}
+						}
+					})
+					.AllowClear(true)
+					.DisplayBrowse(true)
+					.DisplayUseSelected(true)
+				]
+			]
+		],
+		FSlateApplication::Get().GetCursorPos(),
+		FPopupTransitionEffect(FPopupTransitionEffect::ContextMenu));
 
 	return FReply::Handled();
 }

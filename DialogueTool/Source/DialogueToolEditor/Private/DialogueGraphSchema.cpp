@@ -6,6 +6,7 @@
 #include "DialogueGraphFinishNode.h"
 #include "DialogueGraphNode.h"
 #include "DialogueGraphRerouteNode.h"
+#include "DialogueGraphResponseProviderNode.h"
 #include "DialogueGraphSwitcherNode.h"
 #include "DialogueGraphTransitNode.h"
 #include "DialogueGraphUtilities.h"
@@ -19,6 +20,8 @@
 
 namespace
 {
+	const FName schemaResponseProviderPinCategory(TEXT("DialogueResponseProvider"));
+
 	class FDialogueConnectionDrawingPolicy final : public FConnectionDrawingPolicy
 	{
 	public:
@@ -46,6 +49,13 @@ namespace
 			FConnectionParams& params) override
 		{
 			FConnectionDrawingPolicy::DetermineWiringStyle(outputPin, inputPin, params);
+			if ((outputPin && outputPin->PinType.PinCategory == schemaResponseProviderPinCategory)
+				|| (inputPin && inputPin->PinType.PinCategory == schemaResponseProviderPinCategory))
+			{
+				params.WireColor = FLinearColor(0.04f, 0.48f, 0.78f);
+				params.WireThickness = 2.0f;
+				params.bUserFlag1 = true;
+			}
 			if (UDialogueGraphRerouteNode* outputReroute = Cast<UDialogueGraphRerouteNode>(outputPin->GetOwningNode());
 				outputReroute && ShouldReverseTangent(outputReroute))
 			{
@@ -58,6 +68,20 @@ namespace
 			{
 				params.EndDirection = EGPD_Output;
 			}
+		}
+
+		virtual void DrawSplineWithArrow(
+			const FGeometry& startGeometry,
+			const FGeometry& endGeometry,
+			const FConnectionParams& params) override
+		{
+			const int32 wireLayerId = WireLayerID;
+			if (params.bUserFlag1)
+			{
+				WireLayerID = ArrowLayerID;
+			}
+			FConnectionDrawingPolicy::DrawSplineWithArrow(startGeometry, endGeometry, params);
+			WireLayerID = wireLayerId;
 		}
 
 	private:
@@ -148,6 +172,16 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 {
 	const bool bLibraryGraph = contextMenuBuilder.CurrentGraph
 		&& contextMenuBuilder.CurrentGraph->GetTypedOuter<UDialogueLibraryObject>();
+	const auto addResponseProviderAction = [&contextMenuBuilder]()
+	{
+		const TSharedRef<FEdGraphSchemaAction_NewNode> providerAction = MakeShared<FEdGraphSchemaAction_NewNode>(
+			FText::GetEmpty(),
+			LOCTEXT("AddResponseProviderNode", "Add Provider"),
+			LOCTEXT("AddResponseProviderNodeTooltip", "Generates text for connected dialogue entries."),
+			0);
+		providerAction->NodeTemplate = NewObject<UDialogueGraphResponseProviderNode>();
+		contextMenuBuilder.AddAction(providerAction);
+	};
 	const auto addTransitAction = [&contextMenuBuilder, bLibraryGraph]()
 	{
 		if (bLibraryGraph)
@@ -166,6 +200,15 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 
 	if (contextMenuBuilder.FromPin)
 	{
+		if (contextMenuBuilder.FromPin->PinType.PinCategory == schemaResponseProviderPinCategory)
+		{
+			if (contextMenuBuilder.FromPin->Direction == EGPD_Input)
+			{
+				addResponseProviderAction();
+			}
+			return;
+		}
+
 		const bool bFinishResponseFlow = contextMenuBuilder.FromPin->Direction == EGPD_Output
 			&& DialogueGraphUtilities::IsFinishResponseFlow(contextMenuBuilder.FromPin);
 		if (!bFinishResponseFlow)
@@ -250,6 +293,7 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 	contextMenuBuilder.AddAction(switcherAction);
 
 	addTransitAction();
+	addResponseProviderAction();
 
 	const TSharedRef<FEdGraphSchemaAction_NewNode> finishAction = MakeShared<FEdGraphSchemaAction_NewNode>(
 		FText::GetEmpty(),
@@ -280,6 +324,51 @@ const FPinConnectionResponse UDialogueGraphSchema::CanCreateConnection(
 
 	const UEdGraphPin* outputPin = pinA->Direction == EGPD_Output ? pinA : pinB;
 	const UEdGraphPin* inputPin = outputPin == pinA ? pinB : pinA;
+	const bool bOutputProvider = outputPin->PinType.PinCategory == schemaResponseProviderPinCategory;
+	const bool bInputProvider = inputPin->PinType.PinCategory == schemaResponseProviderPinCategory;
+	if (bOutputProvider || bInputProvider)
+	{
+		const UDialogueGraphResponseProviderNode* providerNode = bOutputProvider
+			? Cast<UDialogueGraphResponseProviderNode>(outputPin->GetOwningNode())
+			: nullptr;
+		const UDialogueGraphNode* dialogueNode = bInputProvider
+			? Cast<UDialogueGraphNode>(inputPin->GetOwningNode())
+			: nullptr;
+		if (!providerNode || !dialogueNode
+			|| (dialogueNode->GetRootTextProviderIndex(inputPin) == INDEX_NONE
+				&& dialogueNode->GetResponseProviderIndex(inputPin) == INDEX_NONE))
+		{
+			return FPinConnectionResponse(
+				CONNECT_RESPONSE_DISALLOW,
+				LOCTEXT("InvalidResponseProviderConnection", "Connect a Provider only to a blue dialogue entry input."));
+		}
+
+		if (outputPin->LinkedTo.Contains(inputPin))
+		{
+			return FPinConnectionResponse(
+				CONNECT_RESPONSE_DISALLOW,
+				LOCTEXT("ResponseProviderAlreadyConnected", "This provider is already connected."));
+		}
+
+		if (!inputPin->LinkedTo.IsEmpty())
+		{
+			return FPinConnectionResponse(
+				inputPin == pinA ? CONNECT_RESPONSE_BREAK_OTHERS_A : CONNECT_RESPONSE_BREAK_OTHERS_B,
+				LOCTEXT("ReplaceResponseProviderConnection", "Replace the existing response provider connection."));
+		}
+
+		return FPinConnectionResponse(
+			CONNECT_RESPONSE_MAKE,
+			LOCTEXT("ConnectResponseProvider", "Connect this response provider."));
+	}
+
+	if (outputPin->PinType.PinCategory != inputPin->PinType.PinCategory)
+	{
+		return FPinConnectionResponse(
+			CONNECT_RESPONSE_DISALLOW,
+			LOCTEXT("DifferentPinCategories", "These dialogue pin types cannot be connected."));
+	}
+
 	if (DialogueGraphUtilities::IsFinishResponseFlow(outputPin)
 		&& !DialogueGraphUtilities::IsValidFinishResponseTarget(inputPin->GetOwningNode()))
 	{
@@ -370,7 +459,9 @@ FConnectionDrawingPolicy* UDialogueGraphSchema::CreateConnectionDrawingPolicy(
 
 FLinearColor UDialogueGraphSchema::GetPinTypeColor(const FEdGraphPinType& pinType) const
 {
-	return FLinearColor::White;
+	return pinType.PinCategory == schemaResponseProviderPinCategory
+		? FLinearColor(0.04f, 0.48f, 0.78f)
+		: FLinearColor::White;
 }
 
 #undef LOCTEXT_NAMESPACE

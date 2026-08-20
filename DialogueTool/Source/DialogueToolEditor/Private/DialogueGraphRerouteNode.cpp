@@ -63,7 +63,10 @@ FText UDialogueGraphRerouteNode::GetNodeTitle(ENodeTitleType::Type titleType) co
 
 FText UDialogueGraphRerouteNode::GetTooltipText() const
 {
-	return LOCTEXT("NodeTooltip", "Reroutes a dialogue connection.");
+	return LOCTEXT(
+		"NodeTooltip",
+		"Redirects a dialogue wire to keep the graph readable.\n"
+		"This node has no runtime behavior and does not change execution order or dialogue data.");
 }
 
 UEdGraphPin* UDialogueGraphRerouteNode::GetInputPin() const

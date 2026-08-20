@@ -102,7 +102,11 @@ FText UDialogueGraphActionNode::GetNodeTitle(ENodeTitleType::Type titleType) con
 
 FText UDialogueGraphActionNode::GetTooltipText() const
 {
-	return LOCTEXT("NodeTooltip", "Adds action classes to the connected dialogue text or response.");
+	return LOCTEXT(
+		"NodeTooltip",
+		"Executes the configured action instances from top to bottom when dialogue flow reaches this node.\n"
+		"Every action exposes its editable variables directly in the node; empty entries are skipped.\n"
+		"After the final action, execution continues through the output connection.");
 }
 
 UEdGraphPin* UDialogueGraphActionNode::GetInputPin() const

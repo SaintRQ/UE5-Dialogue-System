@@ -6,6 +6,8 @@
 class UDialogueAction;
 class UDialogueCondition;
 class UDialogueLibraryObject;
+class UDialogueProvider;
+class USoundBase;
 
 inline constexpr int64 DialogueFinishNodeId = MIN_int64;
 
@@ -13,10 +15,25 @@ UENUM(BlueprintType)
 enum  class EDialogueConditionVisibilityResult : uint8
 {
 	VisibleSuccess,
-	VisibleFailure,
-	Invisible
+	VisibleFailure
 	
 };
+
+
+USTRUCT(BlueprintType)
+struct FDialogueCache
+{
+	GENERATED_USTRUCT_BODY()
+	
+	UPROPERTY(BlueprintReadWrite)
+	bool IsFirstTalk = true;
+	
+	UPROPERTY(BlueprintReadWrite)
+	TSet<int64> TopicsMemory = TSet<int64>();
+	
+};
+	
+
 
 USTRUCT(BlueprintType)
 struct FDialogueSwitcherCondition
@@ -88,6 +105,15 @@ struct FDialogueResponse
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Dialogue")
 	FText Response = FText::GetEmpty();
+
+	UPROPERTY(BlueprintReadOnly, Category = "Dialogue")
+	FName CustomTextId = NAME_None;
+
+	UPROPERTY(BlueprintReadOnly, Instanced, Category = "Dialogue")
+	TObjectPtr<UDialogueProvider> ResponseProvider = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Dialogue")
+	TSoftObjectPtr<USoundBase> Sound;
 	
 	UPROPERTY(Instanced)
 	TArray<TObjectPtr<UDialogueCondition>> Conditions;
@@ -119,6 +145,12 @@ struct FDialogueNode
 	
 	UPROPERTY()
 	TArray<FText> RootText = TArray<FText>();
+
+	UPROPERTY(Instanced)
+	TArray<TObjectPtr<UDialogueProvider>> RootTextProviders;
+
+	UPROPERTY()
+	TArray<TSoftObjectPtr<USoundBase>> RootSounds;
 
 	UPROPERTY(Instanced)
 	TArray<TObjectPtr<UDialogueAction>> Actions;

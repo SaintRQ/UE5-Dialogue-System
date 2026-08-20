@@ -11,8 +11,10 @@ class DIALOGUETOOLEDITOR_API SDialogueGraphInitStatus final : public SCompoundWi
 public:
 
 	SLATE_BEGIN_ARGS(SDialogueGraphInitStatus)
+		: _ShowStatus(true)
 	{
 	}
+		SLATE_ARGUMENT(bool, ShowStatus)
 	SLATE_END_ARGS()
 
 	// Constructs an initialization connection status indicator.

@@ -31,6 +31,7 @@ void SDialogueGraphSwitcherNode::Construct(
 {
 	GraphNode = switcherNode;
 	SetCursor(EMouseCursor::CardinalCross);
+	SetToolTipText(switcherNode ? switcherNode->GetTooltipText() : FText::GetEmpty());
 	UpdateGraphNode();
 }
 

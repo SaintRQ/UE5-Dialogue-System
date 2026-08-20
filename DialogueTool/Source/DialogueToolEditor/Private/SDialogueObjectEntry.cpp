@@ -7,6 +7,7 @@
 #include "PropertyCustomizationHelpers.h"
 #include "PropertyEditorModule.h"
 #include "UObject/UnrealType.h"
+#include "Widgets/Layout/SBox.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SNullWidget.h"
 
@@ -25,10 +26,8 @@ void SDialogueObjectEntry::Construct(const FArguments& arguments)
 void SDialogueObjectEntry::Refresh()
 {
 	Content->ClearChildren();
-	Content->AddSlot()
-	.AutoWidth()
-	.VAlign(VAlign_Center)
-	[
+	UObject* object = Object.Get();
+	TSharedRef<SClassPropertyEntryBox> classPicker =
 		SNew(SClassPropertyEntryBox)
 		.MetaClass(BaseClass)
 		.AllowAbstract(false)
@@ -37,7 +36,28 @@ void SDialogueObjectEntry::Refresh()
 		.ShowDisplayNames(true)
 		.SelectedClass(TAttribute<const UClass*>::Create(
 			TAttribute<const UClass*>::FGetter::CreateSP(this, &SDialogueObjectEntry::GetObjectClass)))
-		.OnSetClass(FOnSetClass::CreateSP(this, &SDialogueObjectEntry::OnObjectClassSet))
+		.OnSetClass(FOnSetClass::CreateSP(this, &SDialogueObjectEntry::OnObjectClassSet));
+	if (object)
+	{
+		const FText classTooltip = object->GetClass()->GetToolTipText();
+		TArray<TSharedRef<SWidget>> widgets{classPicker};
+		for (int32 widgetIndex = 0; widgetIndex < widgets.Num(); ++widgetIndex)
+		{
+			const TSharedRef<SWidget>& widget = widgets[widgetIndex];
+			widget->SetToolTipText(classTooltip);
+			FChildren* children = widget->GetChildren();
+			for (int32 childIndex = 0; childIndex < children->Num(); ++childIndex)
+			{
+				widgets.Add(children->GetChildAt(childIndex));
+			}
+		}
+	}
+
+	Content->AddSlot()
+	.AutoWidth()
+	.VAlign(VAlign_Center)
+	[
+		classPicker
 	];
 
 	Content->AddSlot()
@@ -46,7 +66,6 @@ void SDialogueObjectEntry::Refresh()
 		SNullWidget::NullWidget
 	];
 
-	UObject* object = Object.Get();
 	if (!object)
 	{
 		return;
@@ -64,7 +83,7 @@ void SDialogueObjectEntry::Refresh()
 		FSinglePropertyParams propertyParams;
 		propertyParams.bHideAssetThumbnail = true;
 		propertyParams.bHideResetToDefault = true;
-		propertyParams.NamePlacement = EPropertyNamePlacement::Hidden;
+		propertyParams.NamePlacement = EPropertyNamePlacement::Left;
 		TSharedPtr<ISinglePropertyView> propertyView = propertyEditorModule.CreateSingleProperty(
 			object,
 			property->GetFName(),
@@ -82,13 +101,21 @@ void SDialogueObjectEntry::Refresh()
 				changedObject->MarkPackageDirty();
 			}
 		}));
+		TSharedRef<SWidget> propertyWidget = propertyView.ToSharedRef();
+		const float minWidth = property->GetFloatMetaData(TEXT("DialogueMinWidth"));
+		if (minWidth > 0.0f)
+		{
+			propertyWidget = SNew(SBox)
+				.MinDesiredWidth(minWidth)
+				[propertyWidget];
+		}
 		Content->AddSlot()
 		.AutoWidth()
 		.HAlign(HAlign_Right)
 		.VAlign(VAlign_Center)
 		.Padding(6.0f, 0.0f, 0.0f, 0.0f)
 		[
-			propertyView.ToSharedRef()
+			propertyWidget
 		];
 	}
 }

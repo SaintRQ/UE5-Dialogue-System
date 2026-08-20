@@ -26,6 +26,7 @@ void SDialogueGraphTransitNode::Construct(
 {
 	GraphNode = transitNode;
 	SetCursor(EMouseCursor::CardinalCross);
+	SetToolTipText(transitNode ? transitNode->GetTooltipText() : FText::GetEmpty());
 	UpdateGraphNode();
 }
 

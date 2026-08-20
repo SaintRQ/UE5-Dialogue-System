@@ -28,8 +28,12 @@ public:
 
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Text")
 	FText ResponseReturnDialogueText;
-
-	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Rich Text",
+	
+	// ID | Text
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Text")
+	TMap<FName, FText> ResponseCustomTextList; 
+	
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Text",
 		meta = (RequiredAssetDataTags = "RowStructure=/Script/UMG.RichTextStyleRow"))
 	TSoftObjectPtr<UDataTable> RichTextStyleSet;
 };

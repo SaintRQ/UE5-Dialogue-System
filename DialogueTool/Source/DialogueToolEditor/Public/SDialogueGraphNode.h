@@ -38,6 +38,9 @@ private:
 	// Returns the always-visible icon color for a response.
 	FSlateColor GetResponseAlwaysVisibleIconColor(int32 responseIndex) const;
 
+	// Returns the icon color for an assigned text or response sound.
+	FSlateColor GetSoundIconColor(bool response, int32 entryIndex) const;
+
 	// Adds a root text entry.
 	FReply OnAddRootText();
 
@@ -50,6 +53,12 @@ private:
 	// Adds a response entry.
 	FReply OnAddResponse();
 
+	// Opens the custom response text menu.
+	FReply OnOpenCustomResponseMenu();
+
+	// Adds a response linked to a custom text identifier.
+	void OnAddCustomResponse(FName customTextId);
+
 	// Adds the terminal response entry.
 	FReply OnAddFinishResponse();
 
@@ -58,6 +67,9 @@ private:
 
 	// Opens condition settings for a response.
 	FReply OnOpenResponseConditions(int32 responseIndex);
+
+	// Opens sound selection for a text or response entry.
+	FReply OnOpenSound(bool response, int32 entryIndex);
 
 	// Toggles whether a failed response remains visible.
 	FReply OnToggleResponseAlwaysVisible(int32 responseIndex);

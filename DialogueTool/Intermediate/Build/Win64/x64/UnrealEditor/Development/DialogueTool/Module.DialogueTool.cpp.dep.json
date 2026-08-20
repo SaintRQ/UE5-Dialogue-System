@@ -23,6 +23,9 @@
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\source\\dialoguetool\\public\\dialoguemanager.h",
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\intermediate\\build\\win64\\unrealeditor\\inc\\dialoguetool\\uht\\dialoguemanager.generated.h",
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\intermediate\\build\\win64\\unrealeditor\\inc\\dialoguetool\\uht\\dialogueobject.gen.cpp",
+            "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\intermediate\\build\\win64\\unrealeditor\\inc\\dialoguetool\\uht\\dialogueprovider.gen.cpp",
+            "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\source\\dialoguetool\\public\\dialogueprovider.h",
+            "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\intermediate\\build\\win64\\unrealeditor\\inc\\dialoguetool\\uht\\dialogueprovider.generated.h",
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\intermediate\\build\\win64\\unrealeditor\\inc\\dialoguetool\\uht\\dialogueroot.gen.cpp",
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\intermediate\\build\\win64\\unrealeditor\\inc\\dialoguetool\\uht\\dialoguetool.init.gen.cpp",
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\intermediate\\build\\win64\\unrealeditor\\inc\\dialoguetool\\uht\\dialoguetoolsettings.gen.cpp",
@@ -35,6 +38,7 @@
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\source\\dialoguetool\\private\\dialoguelibraryobject.cpp",
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\source\\dialoguetool\\private\\dialoguemanager.cpp",
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\source\\dialoguetool\\private\\dialogueobject.cpp",
+            "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\source\\dialoguetool\\private\\dialogueprovider.cpp",
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\source\\dialoguetool\\private\\dialoguetool.cpp",
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\source\\dialoguetool\\public\\dialoguetool.h",
             "d:\\ue4\\projects\\project_alay\\plugins\\dialoguetool\\source\\dialoguetool\\private\\dialoguetoolsettings.cpp"

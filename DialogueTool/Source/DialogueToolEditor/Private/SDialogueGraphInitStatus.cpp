@@ -30,6 +30,7 @@ void SDialogueGraphInitStatus::Construct(const FArguments& arguments, UEdGraphNo
 		.VAlign(VAlign_Center)
 		[
 			SNew(SBox)
+			.Visibility(arguments._ShowStatus ? EVisibility::Visible : EVisibility::Collapsed)
 			.WidthOverride(16.0f)
 			.HeightOverride(16.0f)
 			.ToolTipText(this, &SDialogueGraphInitStatus::GetStatusTooltip)

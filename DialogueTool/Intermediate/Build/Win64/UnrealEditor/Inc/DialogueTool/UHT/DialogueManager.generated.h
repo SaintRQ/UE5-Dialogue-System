@@ -18,32 +18,42 @@ PRAGMA_DISABLE_DEPRECATION_WARNINGS
 
 class UDialogueObject;
 class UObject;
+class USoundBase;
+struct FDialogueCache;
 struct FDialogueResponse;
 
 // ********** Begin Delegate FDialogueTextUpdated **************************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_16_DELEGATE \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_18_DELEGATE \
 DIALOGUETOOL_API void FDialogueTextUpdated_DelegateWrapper(const FMulticastScriptDelegate& DialogueTextUpdated, FText const& Text);
 
 
 // ********** End Delegate FDialogueTextUpdated ****************************************************
 
 // ********** Begin Delegate FDialogueResponsesUpdated *********************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_20_DELEGATE \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_22_DELEGATE \
 DIALOGUETOOL_API void FDialogueResponsesUpdated_DelegateWrapper(const FMulticastScriptDelegate& DialogueResponsesUpdated, TArray<FDialogueResponse> const& Responses);
 
 
 // ********** End Delegate FDialogueResponsesUpdated ***********************************************
 
 // ********** Begin Delegate FDialogueFinished *****************************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_21_DELEGATE \
-DIALOGUETOOL_API void FDialogueFinished_DelegateWrapper(const FMulticastScriptDelegate& DialogueFinished);
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_26_DELEGATE \
+DIALOGUETOOL_API void FDialogueFinished_DelegateWrapper(const FMulticastScriptDelegate& DialogueFinished, FDialogueCache const& Cache);
 
 
 // ********** End Delegate FDialogueFinished *******************************************************
 
+// ********** Begin Delegate FDialogueSoundRequested ***********************************************
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_30_DELEGATE \
+DIALOGUETOOL_API void FDialogueSoundRequested_DelegateWrapper(const FMulticastScriptDelegate& DialogueSoundRequested, USoundBase* Sound);
+
+
+// ********** End Delegate FDialogueSoundRequested *************************************************
+
 // ********** Begin Class UDialogueManager *********************************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_26_RPC_WRAPPERS_NO_PURE_DECLS \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_35_RPC_WRAPPERS_NO_PURE_DECLS \
 	DECLARE_FUNCTION(execIsWaitingForContinue); \
+	DECLARE_FUNCTION(execGetDialogueCache); \
 	DECLARE_FUNCTION(execFinishDialogue); \
 	DECLARE_FUNCTION(execSelectResponse); \
 	DECLARE_FUNCTION(execContinueDialogue); \
@@ -52,7 +62,7 @@ DIALOGUETOOL_API void FDialogueFinished_DelegateWrapper(const FMulticastScriptDe
 
 DIALOGUETOOL_API UClass* Z_Construct_UClass_UDialogueManager_NoRegister();
 
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_26_INCLASS_NO_PURE_DECLS \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_35_INCLASS_NO_PURE_DECLS \
 private: \
 	static void StaticRegisterNativesUDialogueManager(); \
 	friend struct Z_Construct_UClass_UDialogueManager_Statics; \
@@ -63,7 +73,7 @@ public: \
 	DECLARE_SERIALIZER(UDialogueManager)
 
 
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_26_ENHANCED_CONSTRUCTORS \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_35_ENHANCED_CONSTRUCTORS \
 	/** Standard constructor, called after all reflected properties have been initialized */ \
 	NO_API UDialogueManager(); \
 	/** Deleted move- and copy-constructors, should never be used */ \
@@ -75,13 +85,13 @@ public: \
 	NO_API virtual ~UDialogueManager();
 
 
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_23_PROLOG
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_26_GENERATED_BODY \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_32_PROLOG
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_35_GENERATED_BODY \
 PRAGMA_DISABLE_DEPRECATION_WARNINGS \
 public: \
-	FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_26_RPC_WRAPPERS_NO_PURE_DECLS \
-	FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_26_INCLASS_NO_PURE_DECLS \
-	FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_26_ENHANCED_CONSTRUCTORS \
+	FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_35_RPC_WRAPPERS_NO_PURE_DECLS \
+	FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_35_INCLASS_NO_PURE_DECLS \
+	FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueManager_h_35_ENHANCED_CONSTRUCTORS \
 private: \
 PRAGMA_ENABLE_DEPRECATION_WARNINGS
 

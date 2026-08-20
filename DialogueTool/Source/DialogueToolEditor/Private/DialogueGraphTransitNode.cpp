@@ -133,7 +133,11 @@ FText UDialogueGraphTransitNode::GetNodeTitle(ENodeTitleType::Type titleType) co
 
 FText UDialogueGraphTransitNode::GetTooltipText() const
 {
-	return LOCTEXT("NodeTooltip", "Enters a dialogue library and continues from Return when the library completes.");
+	return LOCTEXT(
+		"NodeTooltip",
+		"Temporarily transfers execution from this dialogue into the selected dialogue library.\n"
+		"The library chooses its first valid entry branch and runs until it reaches RETURN.\n"
+		"After returning, the configured Return actions execute and flow continues through the Return output.");
 }
 
 FDialogueTransit* UDialogueGraphTransitNode::GetTransitData()

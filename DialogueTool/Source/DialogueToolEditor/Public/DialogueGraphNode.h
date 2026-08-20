@@ -15,6 +15,9 @@ class DIALOGUETOOLEDITOR_API UDialogueGraphNode final : public UEdGraphNode
 
 public:
 
+	// Restores provider input pins for dialogue assets created by older versions.
+	virtual void PostLoad() override;
+
 	// Creates the flow pins represented by the dialogue data.
 	virtual void AllocateDefaultPins() override;
 
@@ -63,6 +66,18 @@ public:
 	// Returns the output pin for a response.
 	UEdGraphPin* GetResponseOutputPin(int32 responseIndex) const;
 
+	// Returns the provider input pin for a topic text entry.
+	UEdGraphPin* GetRootTextProviderInputPin(int32 textIndex) const;
+
+	// Returns the text index represented by a provider input pin.
+	int32 GetRootTextProviderIndex(const UEdGraphPin* pin) const;
+
+	// Returns the provider input pin for an editable response.
+	UEdGraphPin* GetResponseProviderInputPin(int32 responseIndex) const;
+
+	// Returns the response index represented by a provider input pin.
+	int32 GetResponseProviderIndex(const UEdGraphPin* pin) const;
+
 	// Returns the compact runtime identifier represented by this graph node.
 	int64 GetDialogueNodeId() const;
 
@@ -84,8 +99,11 @@ public:
 	// Changes a root text entry.
 	void SetRootText(int32 textIndex, const FText& text);
 
-	// Adds an empty response.
-	void AddResponse();
+	// Changes the sound assigned to a root text entry.
+	void SetRootSound(int32 textIndex, const TSoftObjectPtr<USoundBase>& sound);
+
+	// Adds an empty response or a custom response for the specified text identifier.
+	void AddResponse(FName customTextId = NAME_None);
 
 	// Adds the single terminal response.
 	void AddFinishResponse();
@@ -95,6 +113,9 @@ public:
 
 	// Changes a response text.
 	void SetResponseText(int32 responseIndex, const FText& text);
+
+	// Changes the sound assigned to a response entry.
+	void SetResponseSound(int32 responseIndex, const TSoftObjectPtr<USoundBase>& sound);
 
 	// Toggles whether a failed response remains visible.
 	void ToggleResponseAlwaysVisible(int32 responseIndex);
@@ -108,6 +129,9 @@ public:
 	// Changes a response condition class.
 	void SetResponseConditionClass(int32 responseIndex, int32 conditionIndex, const UClass* conditionClass);
 
+	// Synchronizes provider classes for every text and response input pin.
+	void RefreshProviders();
+
 private:
 
 	// Returns the dialogue asset that owns this graph node.
@@ -115,6 +139,12 @@ private:
 
 	// Refreshes the graph after dialogue data changes.
 	void NotifyDialogueChanged(bool bReconstructPins);
+
+	// Synchronizes one response with its connected provider node.
+	void RefreshResponseProvider(int32 responseIndex);
+
+	// Synchronizes one topic text with its connected provider node.
+	void RefreshRootTextProvider(int32 textIndex);
 
 	UPROPERTY()
 	int64 DialogueNodeId = 0;

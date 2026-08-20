@@ -12,13 +12,22 @@
 class UDialogueAction;
 class UDialogueCondition;
 class UDialogueObject;
+class UDialogueProvider;
+class USoundBase;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FDialogueTextUpdated, const FText&, Text);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
 	FDialogueResponsesUpdated,
 	const TArray<FDialogueResponse>&,
 	Responses);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDialogueFinished);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+	FDialogueFinished,
+	const FDialogueCache&,
+	Cache);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(
+	FDialogueSoundRequested,
+	USoundBase*,
+	Sound);
 
 UCLASS(BlueprintType)
 class DIALOGUETOOL_API UDialogueManager : public UGameInstanceSubsystem
@@ -32,7 +41,10 @@ public:
 
 	// Starts the first initialization entry whose conditions succeed.
 	UFUNCTION(BlueprintCallable, Category = "Dialogue Tool")
-	bool StartDialogue(UDialogueObject* dialogue, UObject* context = nullptr);
+	bool StartDialogue(
+		UDialogueObject* dialogue,
+		const FDialogueCache& cache,
+		UObject* context = nullptr);
 
 	// Completes animated text or advances to the next dialogue text entry.
 	UFUNCTION(BlueprintCallable, Category = "Dialogue Tool")
@@ -46,6 +58,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Dialogue Tool")
 	void FinishDialogue();
 
+	// Returns the cache currently used by dialogue playback.
+	UFUNCTION(BlueprintPure, Category = "Dialogue Tool")
+	const FDialogueCache& GetDialogueCache() const { return DialogueCache; }
+	
 	// Returns whether dialogue playback is waiting for explicit continue input.
 	UFUNCTION(BlueprintPure, Category = "Dialogue Tool")
 	bool IsWaitingForContinue() const;
@@ -58,6 +74,9 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Dialogue Tool|Events")
 	FDialogueFinished OnDialogueFinished;
+
+	UPROPERTY(BlueprintAssignable, Category = "Dialogue Tool|Events")
+	FDialogueSoundRequested OnPlaySound;
 
 private:
 
@@ -75,6 +94,9 @@ private:
 
 	// Returns the object supplied to dialogue conditions and actions.
 	UObject* GetExecutionContext() const;
+
+	// Generates text using a configured dialogue provider.
+	FText ResolveProviderText(const UDialogueProvider* provider) const;
 
 	// Starts displaying the current topic text entry.
 	void StartCurrentText();
@@ -126,6 +148,9 @@ private:
 
 	UPROPERTY(Transient)
 	TArray<FDialogueResponse> CurrentResponses;
+
+	UPROPERTY(Transient)
+	FDialogueCache DialogueCache;
 
 	UPROPERTY(Transient)
 	TObjectPtr<UDialogueObject> PreviousDialogue = nullptr;
