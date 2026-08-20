@@ -264,6 +264,7 @@ void UDialogueGraphSwitcherNode::AddCondition()
 
 	const FScopedTransaction transaction(LOCTEXT("AddCondition", "Add Switch Condition"));
 	dialogueObject->Modify();
+	Modify();
 	FDialogueSwitcherCondition& condition = switcherData->Conditions.AddDefaulted_GetRef();
 	condition.Name = FName(*FString::Printf(TEXT("Condition %d"), switcherData->Conditions.Num()));
 	NotifySwitcherChanged(true);
@@ -281,6 +282,7 @@ void UDialogueGraphSwitcherNode::RemoveCondition(int32 conditionIndex)
 
 	const FScopedTransaction transaction(LOCTEXT("RemoveCondition", "Remove Switch Condition"));
 	dialogueObject->Modify();
+	Modify();
 	if (UEdGraphPin* removedPin = GetConditionOutputPin(conditionIndex))
 	{
 		removedPin->BreakAllPinLinks();

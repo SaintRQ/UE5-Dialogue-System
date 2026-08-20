@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "EditorUndoClient.h"
 #include "Toolkits/AssetEditorToolkit.h"
 
 class SGraphEditor;
@@ -9,7 +10,7 @@ class UDialogueObject;
 class UEdGraphNode;
 class IDetailsView;
 
-class DIALOGUETOOLEDITOR_API FDialogueObjectEditor final : public FAssetEditorToolkit
+class DIALOGUETOOLEDITOR_API FDialogueObjectEditor final : public FAssetEditorToolkit, public FEditorUndoClient
 {
 public:
 
@@ -36,6 +37,12 @@ public:
 
 	// Unregisters dialogue editor tabs.
 	virtual void UnregisterTabSpawners(const TSharedRef<FTabManager>& tabManager) override;
+
+	// Refreshes graph widgets after an undo transaction.
+	virtual void PostUndo(bool bSuccess) override;
+
+	// Refreshes graph widgets after a redo transaction.
+	virtual void PostRedo(bool bSuccess) override;
 
 private:
 

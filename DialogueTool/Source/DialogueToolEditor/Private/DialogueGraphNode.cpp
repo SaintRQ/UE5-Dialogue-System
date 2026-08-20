@@ -364,6 +364,7 @@ void UDialogueGraphNode::AddResponse()
 	{
 		const FScopedTransaction transaction(LOCTEXT("AddResponse", "Add Dialogue Response"));
 		GetDialogueObject()->Modify();
+		Modify();
 		const int32 finishIndex = dialogueData->Response.IndexOfByPredicate(
 			[](const FDialogueResponse& response)
 			{
@@ -406,6 +407,7 @@ void UDialogueGraphNode::AddFinishResponse()
 		? LOCTEXT("AddReturnResponse", "Add Dialogue Return Response")
 		: LOCTEXT("AddFinishResponse", "Add Finish Dialogue Response"));
 	dialogueObject->Modify();
+	Modify();
 	UEdGraphPin* defaultOutputPin = GetDefaultOutputPin();
 	if (defaultOutputPin && !defaultOutputPin->LinkedTo.IsEmpty()
 		&& !DialogueGraphUtilities::IsValidFinishResponseTarget(defaultOutputPin->LinkedTo[0]->GetOwningNode()))
@@ -434,6 +436,7 @@ void UDialogueGraphNode::RemoveResponse(int32 responseIndex)
 
 	const FScopedTransaction transaction(LOCTEXT("RemoveResponse", "Remove Dialogue Response"));
 	GetDialogueObject()->Modify();
+	Modify();
 
 	if (UEdGraphPin* removedPin = GetResponseOutputPin(responseIndex))
 	{

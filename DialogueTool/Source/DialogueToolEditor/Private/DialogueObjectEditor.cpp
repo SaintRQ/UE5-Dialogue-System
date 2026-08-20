@@ -14,6 +14,8 @@
 #include "EdGraph/EdGraphNode.h"
 #include "EdGraphNode_Comment.h"
 #include "EdGraphUtilities.h"
+#include "Editor.h"
+#include "Framework/Application/SlateApplication.h"
 #include "Framework/Commands/GenericCommands.h"
 #include "Framework/Commands/UICommandList.h"
 #include "GraphEditor.h"
@@ -37,6 +39,8 @@ void FDialogueObjectEditor::InitDialogueObjectEditor(
 	UDialogueObject* objectToEdit)
 {
 	DialogueObject = objectToEdit;
+	objectToEdit->SetFlags(RF_Transactional);
+	GEditor->RegisterForUndo(this);
 	UEdGraph* graph = objectToEdit->GetEditorGraph();
 	const bool bLibrary = objectToEdit->IsA<UDialogueLibraryObject>();
 	UClass* graphSchemaClass = bLibrary
@@ -225,6 +229,23 @@ void FDialogueObjectEditor::UnregisterTabSpawners(const TSharedRef<FTabManager>&
 	tabManager->UnregisterTabSpawner(GraphTabId);
 	tabManager->UnregisterTabSpawner(DetailsTabId);
 	FAssetEditorToolkit::UnregisterTabSpawners(tabManager);
+}
+
+void FDialogueObjectEditor::PostUndo(bool bSuccess)
+{
+	if (!bSuccess || !GraphEditor.IsValid())
+	{
+		return;
+	}
+
+	GraphEditor->ClearSelectionSet();
+	GraphEditor->NotifyGraphChanged();
+	FSlateApplication::Get().DismissAllMenus();
+}
+
+void FDialogueObjectEditor::PostRedo(bool bSuccess)
+{
+	PostUndo(bSuccess);
 }
 
 TSharedRef<SDockTab> FDialogueObjectEditor::SpawnGraphTab(const FSpawnTabArgs& arguments)

@@ -172,6 +172,7 @@ void UDialogueGraphInitNode::AddInit()
 	{
 		const FScopedTransaction transaction(LOCTEXT("AddInit", "Add Dialogue Start"));
 		dialogueObject->Modify();
+		Modify();
 		dialogueObject->GetDialogueInitData().AddDefaulted();
 		NotifyInitChanged(true);
 	}
@@ -188,6 +189,7 @@ void UDialogueGraphInitNode::RemoveInit(int32 initIndex)
 
 	const FScopedTransaction transaction(LOCTEXT("RemoveInit", "Remove Dialogue Start"));
 	dialogueObject->Modify();
+	Modify();
 	if (UEdGraphPin* removedPin = GetInitOutputPin(initIndex))
 	{
 		removedPin->BreakAllPinLinks();
