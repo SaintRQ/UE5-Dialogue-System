@@ -30,6 +30,9 @@ struct FDialogueCache
 	
 	UPROPERTY(BlueprintReadWrite)
 	TSet<int64> TopicsMemory = TSet<int64>();
+
+	UPROPERTY(BlueprintReadWrite)
+	TSet<int64> ResponsesMemory = TSet<int64>();
 	
 };
 	
@@ -102,6 +105,9 @@ USTRUCT(BlueprintType)
 struct FDialogueResponse
 {
 	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	int64 ID = 0;
 	
 	UPROPERTY(BlueprintReadOnly, Category = "Dialogue")
 	FText Response = FText::GetEmpty();

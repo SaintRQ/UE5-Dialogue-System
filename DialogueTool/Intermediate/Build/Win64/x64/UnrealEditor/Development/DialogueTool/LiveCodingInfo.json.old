@@ -1,0 +1,25 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.DialogueTool.cpp.obj": [
+			"DialogueAction.gen.cpp.obj",
+			"DialogueCondition.gen.cpp.obj",
+			"DialogueLibraryObject.gen.cpp.obj",
+			"DialogueManager.gen.cpp.obj",
+			"DialogueObject.gen.cpp.obj",
+			"DialogueProvider.gen.cpp.obj",
+			"DialogueRoot.gen.cpp.obj",
+			"DialogueTool.init.gen.cpp.obj",
+			"DialogueToolSettings.gen.cpp.obj",
+			"PerModuleInline.gen.cpp.obj",
+			"DialogueAction.cpp.obj",
+			"DialogueCondition.cpp.obj",
+			"DialogueLibraryObject.cpp.obj",
+			"DialogueManager.cpp.obj",
+			"DialogueObject.cpp.obj",
+			"DialogueProvider.cpp.obj",
+			"DialogueTool.cpp.obj",
+			"DialogueToolSettings.cpp.obj"
+		]
+	}
+}

@@ -6,6 +6,8 @@
 
 DECLARE_DELEGATE_OneParam(FOnSetDialogueObjectClass, const UClass*);
 
+class ISinglePropertyView;
+
 class DIALOGUETOOLEDITOR_API SDialogueObjectEntry final : public SCompoundWidget
 {
 public:
@@ -13,10 +15,12 @@ public:
 	SLATE_BEGIN_ARGS(SDialogueObjectEntry)
 		: _BaseClass(UObject::StaticClass())
 		, _Object(nullptr)
+		, _RichTextProperties(false)
 	{
 	}
 		SLATE_ARGUMENT(const UClass*, BaseClass)
 		SLATE_ATTRIBUTE(UObject*, Object)
+		SLATE_ARGUMENT(bool, RichTextProperties)
 		SLATE_EVENT(FOnSetDialogueObjectClass, OnSetClass)
 	SLATE_END_ARGS()
 
@@ -36,6 +40,8 @@ private:
 
 	const UClass* BaseClass = nullptr;
 	TAttribute<UObject*> Object;
+	bool RichTextProperties = false;
 	FOnSetDialogueObjectClass OnSetClass;
 	TSharedPtr<SHorizontalBox> Content;
+	TArray<TSharedPtr<ISinglePropertyView>> PropertyViews;
 };

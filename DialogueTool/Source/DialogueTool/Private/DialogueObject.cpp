@@ -17,6 +17,7 @@ void FDialogueSwitcher::EnsureMinimumConditions()
 void UDialogueObject::PostLoad()
 {
 	Super::PostLoad();
+	TSet<int64> responseIds;
 	for (TPair<int64, FDialogueNode>& dialogueNode : DialogueNodes)
 	{
 		FDialogueNode& node = dialogueNode.Value;
@@ -50,10 +51,16 @@ void UDialogueObject::PostLoad()
 
 			if (!response.FinishDialogue)
 			{
+				if (response.ID <= 0 || responseIds.Contains(response.ID))
+				{
+					response.ID = GenerateUniqueId();
+				}
+				responseIds.Add(response.ID);
 				++responseIndex;
 				continue;
 			}
 
+			response.ID = 0;
 			if (finishIndex != INDEX_NONE)
 			{
 				node.Response.RemoveAt(responseIndex);
@@ -84,6 +91,21 @@ void UDialogueObject::PostLoad()
 
 int64 UDialogueObject::GenerateUniqueId() const
 {
+	const auto containsResponseId = [this](const int64 responseId)
+	{
+		for (const TPair<int64, FDialogueNode>& dialogueNode : DialogueNodes)
+		{
+			for (const FDialogueResponse& response : dialogueNode.Value.Response)
+			{
+				if (response.ID == responseId)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+
 	int64 id = 0;
 
 	do
@@ -91,7 +113,11 @@ int64 UDialogueObject::GenerateUniqueId() const
 		const FGuid guid = FGuid::NewGuid();
 		id = static_cast<int64>(CityHash64(reinterpret_cast<const char*>(&guid), sizeof(guid)) & MAX_int64);
 	}
-	while (id == 0 || DialogueNodes.Contains(id) || DialogueSwitchers.Contains(id) || DialogueTransits.Contains(id));
+	while (id == 0
+		|| DialogueNodes.Contains(id)
+		|| DialogueSwitchers.Contains(id)
+		|| DialogueTransits.Contains(id)
+		|| containsResponseId(id));
 
 	return id;
 }

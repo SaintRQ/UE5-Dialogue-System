@@ -4,8 +4,10 @@
 
 #include "ISinglePropertyView.h"
 #include "Modules/ModuleManager.h"
+#include "PropertyHandle.h"
 #include "PropertyCustomizationHelpers.h"
 #include "PropertyEditorModule.h"
+#include "SDialogueRichTextEditor.h"
 #include "UObject/UnrealType.h"
 #include "Widgets/Layout/SBox.h"
 #include "Widgets/SBoxPanel.h"
@@ -15,6 +17,7 @@ void SDialogueObjectEntry::Construct(const FArguments& arguments)
 {
 	BaseClass = arguments._BaseClass;
 	Object = arguments._Object;
+	RichTextProperties = arguments._RichTextProperties;
 	OnSetClass = arguments._OnSetClass;
 	ChildSlot
 	[
@@ -26,6 +29,7 @@ void SDialogueObjectEntry::Construct(const FArguments& arguments)
 void SDialogueObjectEntry::Refresh()
 {
 	Content->ClearChildren();
+	PropertyViews.Reset();
 	UObject* object = Object.Get();
 	TSharedRef<SClassPropertyEntryBox> classPicker =
 		SNew(SClassPropertyEntryBox)
@@ -102,6 +106,42 @@ void SDialogueObjectEntry::Refresh()
 			}
 		}));
 		TSharedRef<SWidget> propertyWidget = propertyView.ToSharedRef();
+		const TSharedPtr<IPropertyHandle> propertyHandle = propertyView->GetPropertyHandle();
+		if (RichTextProperties && CastField<FTextProperty>(*property) && propertyHandle.IsValid())
+		{
+			PropertyViews.Add(propertyView);
+			FText propertyText;
+			propertyHandle->GetValue(propertyText);
+			propertyWidget = SNew(SHorizontalBox)
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.VAlign(VAlign_Center)
+				[
+					propertyHandle->CreatePropertyNameWidget()
+				]
+
+				+ SHorizontalBox::Slot()
+				.FillWidth(1.0f)
+				.VAlign(VAlign_Center)
+				.Padding(4.0f, 0.0f, 0.0f, 0.0f)
+				[
+					SNew(SDialogueRichTextEditor)
+					.Text(propertyText)
+					.AutoWrapText(true)
+					.OnTextCommitted_Lambda([propertyHandle](const FText& text, ETextCommit::Type)
+					{
+						FText currentText;
+						if (propertyHandle->GetValue(currentText) == FPropertyAccess::Success
+							&& currentText.EqualTo(text))
+						{
+							return;
+						}
+
+						propertyHandle->SetValue(text);
+					})
+				];
+		}
 		const float minWidth = property->GetFloatMetaData(TEXT("DialogueMinWidth"));
 		if (minWidth > 0.0f)
 		{

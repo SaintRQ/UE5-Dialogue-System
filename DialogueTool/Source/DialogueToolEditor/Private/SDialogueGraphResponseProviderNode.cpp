@@ -103,6 +103,7 @@ void SDialogueGraphResponseProviderNode::UpdateGraphNode()
 						[
 							SNew(SDialogueObjectEntry)
 							.BaseClass(UDialogueProvider::StaticClass())
+							.RichTextProperties(true)
 							.Object_Lambda([this]() -> UObject*
 							{
 								return GetDialogueProvider();

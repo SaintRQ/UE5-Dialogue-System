@@ -9,8 +9,16 @@
 #include "DialogueToolSettings.h"
 #include "DialogueProvider.h"
 #include "Containers/StringConv.h"
+#include "Engine/GameInstance.h"
 #include "Engine/World.h"
 #include "Sound/SoundBase.h"
+
+UDialogueManager* UDialogueManager::GetFromContext(const UObject* context)
+{
+	UWorld* world = context ? context->GetWorld() : nullptr;
+	UGameInstance* gameInstance = world ? world->GetGameInstance() : nullptr;
+	return gameInstance ? gameInstance->GetSubsystem<UDialogueManager>() : nullptr;
+}
 
 void UDialogueManager::Deinitialize()
 {
@@ -104,6 +112,10 @@ void UDialogueManager::SelectResponse(int32 responseIndex)
 	}
 
 	const FDialogueResponse response = CurrentResponses[responseIndex];
+	if (response.ID > 0)
+	{
+		DialogueCache.ResponsesMemory.Add(response.ID);
+	}
 	CurrentResponses.Reset();
 	OnUpdateResponses.Broadcast(CurrentResponses);
 	if (USoundBase* sound = response.Sound.LoadSynchronous())
@@ -132,8 +144,10 @@ bool UDialogueManager::IsWaitingForContinue() const
 }
 
 bool UDialogueManager::AreConditionsMet(
-	const TArray<TObjectPtr<UDialogueCondition>>& conditions) const
+	const TArray<TObjectPtr<UDialogueCondition>>& conditions,
+	const int64 responseId) const
 {
+	TGuardValue<int64> responseIdGuard(EvaluatedResponseId, responseId);
 	UObject* context = GetExecutionContext();
 	for (UDialogueCondition* condition : conditions)
 	{
@@ -368,6 +382,7 @@ void UDialogueManager::AdvanceToNode(int64 nodeId)
 
 		if (const FDialogueNode* dialogueNode = ActiveDialogue->FindDialogueNode(nodeId))
 		{
+			CurrentTopicWasVisited = DialogueCache.TopicsMemory.Contains(nodeId);
 			DialogueCache.TopicsMemory.Add(nodeId);
 			CurrentNodeId = nodeId;
 			CurrentTextIndex = 0;
@@ -491,7 +506,7 @@ void UDialogueManager::PublishResponses(const TArray<FDialogueResponse>& respons
 			return;
 		}
 
-		const bool conditionsMet = AreConditionsMet(response.Conditions);
+		const bool conditionsMet = AreConditionsMet(response.Conditions, response.ID);
 		if (!conditionsMet && !response.AlwaysVisible)
 		{
 			return;
@@ -625,6 +640,7 @@ void UDialogueManager::ResetDialogueState()
 	PendingActions.Reset();
 	CurrentResponses.Reset();
 	DialogueCache = FDialogueCache();
+	EvaluatedResponseId = 0;
 	PreviousDialogue = nullptr;
 	PreviousReturnActions.Reset();
 	PlaybackState = EPlaybackState::Inactive;
@@ -633,6 +649,7 @@ void UDialogueManager::ResetDialogueState()
 	CurrentRevealOffsets.Reset();
 	CurrentRevealOpenTags.Reset();
 	CurrentNodeId = -1;
+	CurrentTopicWasVisited = false;
 	PendingNextNodeId = -1;
 	PreviousReturnNodeId = -1;
 	CurrentTextIndex = 0;

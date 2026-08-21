@@ -2,6 +2,8 @@
 	"RemapUnityFiles": 
 	{
 		"Module.DialogueTool.cpp.obj": [
+			"DC_WasResponseSelected.gen.cpp.obj",
+			"DC_WasTopicVisited.gen.cpp.obj",
 			"DialogueAction.gen.cpp.obj",
 			"DialogueCondition.gen.cpp.obj",
 			"DialogueLibraryObject.gen.cpp.obj",
@@ -12,6 +14,8 @@
 			"DialogueTool.init.gen.cpp.obj",
 			"DialogueToolSettings.gen.cpp.obj",
 			"PerModuleInline.gen.cpp.obj",
+			"DC_WasResponseSelected.cpp.obj",
+			"DC_WasTopicVisited.cpp.obj",
 			"DialogueAction.cpp.obj",
 			"DialogueCondition.cpp.obj",
 			"DialogueLibraryObject.cpp.obj",

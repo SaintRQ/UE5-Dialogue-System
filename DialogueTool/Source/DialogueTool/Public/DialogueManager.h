@@ -36,6 +36,9 @@ class DIALOGUETOOL_API UDialogueManager : public UGameInstanceSubsystem
 
 public:
 
+	// Returns the dialogue manager associated with an object context.
+	static UDialogueManager* GetFromContext(const UObject* context);
+
 	// Stops dialogue playback before the subsystem is destroyed.
 	virtual void Deinitialize() override;
 
@@ -61,6 +64,12 @@ public:
 	// Returns the cache currently used by dialogue playback.
 	UFUNCTION(BlueprintPure, Category = "Dialogue Tool")
 	const FDialogueCache& GetDialogueCache() const { return DialogueCache; }
+
+	// Returns the response currently being evaluated, or zero outside response conditions.
+	int64 GetEvaluatedResponseId() const { return EvaluatedResponseId; }
+
+	// Returns whether the topic containing the evaluated response was visited before its current entry.
+	bool WasEvaluatedTopicVisited() const { return EvaluatedResponseId > 0 && CurrentTopicWasVisited; }
 	
 	// Returns whether dialogue playback is waiting for explicit continue input.
 	UFUNCTION(BlueprintPure, Category = "Dialogue Tool")
@@ -90,7 +99,9 @@ private:
 	};
 
 	// Returns whether every configured condition succeeds.
-	bool AreConditionsMet(const TArray<TObjectPtr<UDialogueCondition>>& conditions) const;
+	bool AreConditionsMet(
+		const TArray<TObjectPtr<UDialogueCondition>>& conditions,
+		int64 responseId = 0) const;
 
 	// Returns the object supplied to dialogue conditions and actions.
 	UObject* GetExecutionContext() const;
@@ -155,6 +166,8 @@ private:
 	UPROPERTY(Transient)
 	FDialogueCache DialogueCache;
 
+	mutable int64 EvaluatedResponseId = 0;
+
 	UPROPERTY(Transient)
 	TObjectPtr<UDialogueObject> PreviousDialogue = nullptr;
 
@@ -169,6 +182,7 @@ private:
 	TArray<int32> CurrentRevealOffsets;
 	TArray<int32> CurrentRevealOpenTags;
 	int64 CurrentNodeId = -1;
+	bool CurrentTopicWasVisited = false;
 	int64 PendingNextNodeId = -1;
 	int64 PreviousReturnNodeId = -1;
 	int32 CurrentTextIndex = 0;

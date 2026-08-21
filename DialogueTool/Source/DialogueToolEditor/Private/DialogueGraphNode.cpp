@@ -171,6 +171,7 @@ void UDialogueGraphNode::PostPasteNode()
 		}
 		for (FDialogueResponse& response : dialogueData.Response)
 		{
+			response.ID = response.FinishDialogue ? 0 : dialogueObject->GenerateUniqueId();
 			response.ResponseProvider = nullptr;
 			for (TObjectPtr<UDialogueCondition>& condition : response.Conditions)
 			{
@@ -587,6 +588,7 @@ void UDialogueGraphNode::AddResponse(FName customTextId)
 		}
 
 		FDialogueResponse& response = dialogueData->Response.InsertDefaulted_GetRef(responseIndex);
+		response.ID = GetDialogueObject()->GenerateUniqueId();
 		response.CustomTextId = customTextId;
 		if (dialogueData->Response.Num() == 1)
 		{
