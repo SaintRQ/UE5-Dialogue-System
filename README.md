@@ -23,8 +23,6 @@ The current version is developed and verified with **Unreal Engine 5.6**.
 <details open>
 <summary><strong>🇷🇺 Русский</strong></summary>
 
-# Русская документация
-
 ## Содержание
 
 - [Возможности](#возможности)
@@ -111,9 +109,11 @@ DIALOGUE START: Default
 
 | Параметр | Назначение |
 |---|---|
+| `Auto Continue` | Автоматическая промотка текста (без клика). |
 | `Characters Per Second` | Скорость посимвольного вывода. Значение `0` или меньше показывает текст мгновенно. |
 | `Response End Dialogue Text` | Текст автоматически созданного ответа, завершающего обычный диалог. Рекомендуется задать непустое значение. |
 | `Response Return Dialogue Text` | Текст терминального ответа внутри библиотеки. По умолчанию — `Return`. |
+| `Response Custom Text List` | Список заготовленных ответов для ноды  `TOPIC `. Выбор через `Add Custom` кнопку в ноде.|
 | `Rich Text Style Set` | Data Table со структурой `RichTextStyleRow`. Используется редактором для меню тегов; ту же таблицу следует назначить игровым `RichTextBlock`. |
 
 Эквивалентная конфигурация:
@@ -661,8 +661,6 @@ virtual void ExecuteAction_Implementation(UObject* context) override;
 <a id="english"></a>
 <details>
 <summary><strong>🇬🇧 English</strong></summary>
-
-# English Documentation
 
 ## Contents
 
