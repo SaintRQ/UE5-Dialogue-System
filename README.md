@@ -1,15 +1,15 @@
 # Dialogue Tool
 
-<img width="1653" height="654" alt="1" src="https://github.com/user-attachments/assets/37e18ea9-a194-4226-a596-3474a8adb539" />
+<img width="1479" height="750" alt="1" src="https://github.com/user-attachments/assets/1561fa4e-4fde-4ea1-a0ec-ac93c648eadb" />
 
 
 > **RU:** Dialogue Tool — плагин для Unreal Engine с визуальным редактором ветвящихся диалогов, переиспользуемыми библиотеками, условиями, действиями, Rich Text и независимым от UI runtime-проигрывателем.
 >
 > **EN:** Dialogue Tool is an Unreal Engine plugin that provides a visual editor for branching conversations, reusable dialogue libraries, conditions, actions, Rich Text, and a UI-independent runtime player.
 
-Текущая версия разработана и проверена на **Unreal Engine 5.6**. 
+Текущая версия разработана и проверена на **Unreal Engine 5.6**. Стиль нод обновлен - отличается от тех, что на скринах ниже.
 
-The current version is developed and verified with **Unreal Engine 5.6**.
+The current version is developed and verified with **Unreal Engine 5.6**. The Node style has been updated — it differs from the ones shown in the screenshots below.
 
 ---
 
