@@ -51,11 +51,15 @@ void SDialogueGraphNode::UpdateGraphNode()
 	UDialogueGraphNode* dialogueNode = GetDialogueNode();
 	const bool bLibrary = dialogueNode && dialogueNode->GetGraph()
 		&& dialogueNode->GetGraph()->GetTypedOuter<UDialogueLibraryObject>();
+	
 	const FDialogueNode* dialogueData = dialogueNode ? dialogueNode->GetDialogueData() : nullptr;
 	bool bHasProvider = false;
+	
 	TSharedRef<SGridPanel> content = SNew(SGridPanel)
 		.FillColumn(0, 1.0f);
+	
 	TSharedRef<SVerticalBox> textContent = SNew(SVerticalBox);
+	
 	const auto createSection = [](
 		const TSharedRef<SVerticalBox>& sectionContent,
 		const FLinearColor& borderColor) -> TSharedRef<SWidget>
@@ -73,7 +77,10 @@ void SDialogueGraphNode::UpdateGraphNode()
 					sectionContent
 				]
 			];
+		
 	};
+	
+	
 	const auto createSoundButton = [this](bool response, int32 entryIndex) -> TSharedRef<SWidget>
 	{
 		return SNew(SButton)
@@ -87,35 +94,6 @@ void SDialogueGraphNode::UpdateGraphNode()
 				.ColorAndOpacity(this, &SDialogueGraphNode::GetSoundIconColor, response, entryIndex)
 			];
 	};
-
-	content->AddSlot(0, 0)
-	[
-		SNew(SBorder)
-		.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
-		.BorderBackgroundColor(FLinearColor(0.015f, 0.025f, 0.04f))
-		.Padding(8.0f, 6.0f)
-		[
-			SNew(SOverlay)
-
-			+ SOverlay::Slot()
-			.HAlign(HAlign_Center)
-			.VAlign(VAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("NodeTitle", "TOPIC"))
-				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
-				.Justification(ETextJustify::Center)
-				.ShadowOffset(FVector2D(1.0f, 1.0f))
-			]
-
-			+ SOverlay::Slot()
-			.HAlign(HAlign_Right)
-			.VAlign(VAlign_Center)
-			[
-				SNew(SDialogueGraphInitStatus, dialogueNode)
-			]
-		]
-	];
 
 	textContent->AddSlot()
 	.AutoHeight()
@@ -226,6 +204,7 @@ void SDialogueGraphNode::UpdateGraphNode()
 				]
 			];
 
+			// Provider outline
 			TSharedRef<SWidget> textRowWidget = textRow;
 			if (bProviderText)
 			{
@@ -259,14 +238,14 @@ void SDialogueGraphNode::UpdateGraphNode()
 	.Padding(2.0f, 4.0f, 2.0f, 2.0f)
 	[
 		SNew(SDialogueAddButton)
-		.Color(FLinearColor(0.06f, 0.62f, 0.22f))
+		.Color(FLinearColor(0.06f, 0.62f, 0.22f, 0.5f))
 		.OnClicked(this, &SDialogueGraphNode::OnAddRootText)
 	];
 
 	content->AddSlot(0, 1)
 	.Padding(2.0f)
 	[
-		createSection(textContent, FLinearColor(0.12f, 0.62f, 0.27f))
+		createSection(textContent, FLinearColor(0.12f, 0.62f, 0.27f, 0))
 	];
 
 	const int32 responseCount = dialogueData ? dialogueData->Response.Num() : 0;
@@ -278,21 +257,13 @@ void SDialogueGraphNode::UpdateGraphNode()
 	const int32 responseHeaderRow = 2;
 	const int32 addResponseRow = responseHeaderRow + responseCount + 1;
 
-	content->AddSlot(0, responseHeaderRow, SGridPanel::Layer(0))
+	content->AddSlot(0, responseHeaderRow)
 	.RowSpan(responseCount + 2)
 	.Padding(2.0f)
 	[
-		SNew(SBorder)
-		.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-		.BorderBackgroundColor(FLinearColor(0.08f, 0.38f, 0.86f))
-		.Padding(2.0f)
-		[
-			SNew(SBorder)
-			.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-			.BorderBackgroundColor(FLinearColor(0.008f, 0.012f, 0.018f))
-		]
+		createSection(SNew(SVerticalBox), FLinearColor(0.12f, 0.42f, 0.82f, 0))
 	];
-
+	 
 	content->AddSlot(0, responseHeaderRow, SGridPanel::Layer(1))
 	.Padding(10.0f, 10.0f, 8.0f, 2.0f)
 	[
@@ -548,7 +519,7 @@ void SDialogueGraphNode::UpdateGraphNode()
 	.Padding(2.0f)
 	[
 		SNew(SDialogueAddButton)
-		.Color(FLinearColor(0.06f, 0.38f, 0.92f))
+		.Color(FLinearColor(0.06f, 0.38f, 0.92f, 0.5f))
 		.OnClicked(this, &SDialogueGraphNode::OnAddResponse)
 	];
 	addResponseButtons->AddSlot()
@@ -556,7 +527,7 @@ void SDialogueGraphNode::UpdateGraphNode()
 	.Padding(2.0f)
 	[
 		SNew(SDialogueAddButton)
-	.Color(FLinearColor(0.04f, 0.7f, 0.24f))
+	    .Color(FLinearColor(0.04f, 0.7f, 0.24f, 0.5))
 		.Text(LOCTEXT("AddCustom", "Add Custom"))
 		.OnClicked(this, &SDialogueGraphNode::OnOpenCustomResponseMenu)
 	];
@@ -567,7 +538,7 @@ void SDialogueGraphNode::UpdateGraphNode()
 		.Padding(2.0f)
 		[
 			SNew(SDialogueAddButton)
-			.Color(FLinearColor(0.78f, 0.16f, 0.055f))
+			.Color(FLinearColor(0.78f, 0.16f, 0.055f, 0.5))
 			.Text(bLibrary
 				? LOCTEXT("AddReturn", "Add Return")
 				: LOCTEXT("AddFinish", "Add Finish"))
@@ -602,30 +573,73 @@ void SDialogueGraphNode::UpdateGraphNode()
 		SNew(SBorder)
 		.BorderImage(FAppStyle::GetBrush("Graph.Node.Body"))
 		.BorderBackgroundColor(this, &SDialogueGraphNode::GetBorderColor)
-		.Padding(0.0f)
+		.Padding(2.0f)
 		[
-			SNew(SHorizontalBox)
-
-			+ SHorizontalBox::Slot()
-			.AutoWidth()
-			.VAlign(bHasProvider ? VAlign_Top : VAlign_Center)
-			.Padding(2.0f)
+			SNew(SBorder)
+			.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
+			.BorderBackgroundColor(FLinearColor(0.008f, 0.012f, 0.018f))
+			.Padding(0.0f)
 			[
-				inputWidget
-			]
+				SNew(SVerticalBox)
 
-			+ SHorizontalBox::Slot()
-			.FillWidth(1.0f)
-			[
-				content
-			]
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					SNew(SBorder)
+					.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
+					.BorderBackgroundColor(FLinearColor(0.115f, 0.525f, 0.54f, 0.5f))
+					.Padding(8.0f, 6.0f)
+					[
+						SNew(SOverlay)
 
-			+ SHorizontalBox::Slot()
-			.AutoWidth()
-			.VAlign(VAlign_Center)
-			.Padding(2.0f)
-			[
-				outputWidget
+						+ SOverlay::Slot()
+						.HAlign(HAlign_Center)
+						.VAlign(VAlign_Center)
+						[
+							SNew(STextBlock)
+							.Text(LOCTEXT("NodeTitle", "TOPIC"))
+							.Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+							.ColorAndOpacity(FLinearColor(0.115f, 0.525f, 0.54f))
+							.Justification(ETextJustify::Center)
+							.ShadowOffset(FVector2D(1.0f, 1.0f))
+						]
+
+						+ SOverlay::Slot()
+						.HAlign(HAlign_Right)
+						.VAlign(VAlign_Center)
+						[
+							SNew(SDialogueGraphInitStatus, dialogueNode)
+						]
+					]
+				]
+
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					SNew(SHorizontalBox)
+
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.VAlign(bHasProvider ? VAlign_Top : VAlign_Center)
+					.Padding(2.0f)
+					[
+						inputWidget
+					]
+
+					+ SHorizontalBox::Slot()
+					.FillWidth(1.0f)
+					[
+						content
+					]
+
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.VAlign(VAlign_Center)
+					.Padding(2.0f)
+					[
+						outputWidget
+					]
+				]
 			]
 		]
 	];
@@ -661,7 +675,7 @@ FSlateColor SDialogueGraphNode::GetBorderColor() const
 	const TSharedPtr<SGraphPanel> ownerPanel = GetOwnerPanel();
 	return ownerPanel.IsValid() && ownerPanel->SelectionManager.IsNodeSelected(GraphNode)
 		? FLinearColor(0.1f, 1.0f, 0.3f)
-		: FLinearColor(0.035f, 0.62f, 0.16f);
+		: FLinearColor(0.008f, 0.012f, 0.018f);
 }
 
 FSlateColor SDialogueGraphNode::GetResponseConditionIconColor(int32 responseIndex) const

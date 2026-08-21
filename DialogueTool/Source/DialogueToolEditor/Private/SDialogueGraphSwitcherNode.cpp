@@ -48,50 +48,6 @@ void SDialogueGraphSwitcherNode::UpdateGraphNode()
 	TSharedRef<SGridPanel> content = SNew(SGridPanel)
 		.FillColumn(0, 1.0f);
 
-	content->AddSlot(0, 0)
-	[
-		SNew(SBorder)
-		.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
-		.BorderBackgroundColor(FLinearColor(0.18f, 0.025f, 0.32f))
-		.Padding(10.0f, 7.0f)
-		[
-			SNew(SOverlay)
-
-			+ SOverlay::Slot()
-			.HAlign(HAlign_Center)
-			.VAlign(VAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("NodeTitle", "SWITCH"))
-				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
-				.Justification(ETextJustify::Center)
-				.ShadowOffset(FVector2D(1.0f, 1.0f))
-			]
-
-			+ SOverlay::Slot()
-			.HAlign(HAlign_Right)
-			.VAlign(VAlign_Center)
-			[
-				SNew(SDialogueGraphInitStatus, switcherNode)
-			]
-		]
-	];
-
-	content->AddSlot(0, 1, SGridPanel::Layer(0))
-	.RowSpan(conditionCount + 1)
-	.Padding(2.0f)
-	[
-		SNew(SBorder)
-		.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-		.BorderBackgroundColor(FLinearColor(0.56f, 0.12f, 0.92f))
-		.Padding(2.0f)
-		[
-			SNew(SBorder)
-			.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-			.BorderBackgroundColor(FLinearColor(0.008f, 0.012f, 0.018f))
-		]
-	];
-
 	if (switcherData)
 	{
 		for (int32 conditionIndex = 0; conditionIndex < conditionCount; ++conditionIndex)
@@ -171,12 +127,13 @@ void SDialogueGraphSwitcherNode::UpdateGraphNode()
 		}
 	}
 
+	// Button
 	content->AddSlot(0, conditionCount + 1, SGridPanel::Layer(1))
 	.HAlign(HAlign_Center)
 	.Padding(10.0f, 6.0f, 8.0f, 10.0f)
 	[
 		SNew(SDialogueAddButton)
-		.Color(FLinearColor(0.56f, 0.12f, 0.92f))
+		.Color(FLinearColor(0.56f, 0.12f, 0.92f, 0.5f))
 		.OnClicked(this, &SDialogueGraphSwitcherNode::OnAddCondition)
 	];
 
@@ -201,23 +158,60 @@ void SDialogueGraphSwitcherNode::UpdateGraphNode()
 			.BorderBackgroundColor(FLinearColor(0.035f, 0.012f, 0.06f))
 			.Padding(0.0f)
 			[
-				SNew(SHorizontalBox)
+				SNew(SVerticalBox)
 
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				.VAlign(VAlign_Center)
-				.Padding(2.0f)
+				+ SVerticalBox::Slot()
+				.AutoHeight()
 				[
-					inputWidget
+					SNew(SBorder)
+					.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
+					.BorderBackgroundColor(FLinearColor(0.18f, 0.025f, 0.32f))
+					.Padding(10.0f, 7.0f)
+					[
+						SNew(SOverlay)
+
+						+ SOverlay::Slot()
+						.HAlign(HAlign_Center)
+						.VAlign(VAlign_Center)
+						[
+							SNew(STextBlock)
+							.Text(LOCTEXT("NodeTitle", "SWITCH"))
+							.Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+							.ColorAndOpacity(FLinearColor(0.8f, 0.52f, 1.0f))
+							.Justification(ETextJustify::Center)
+							.ShadowOffset(FVector2D(1.0f, 1.0f))
+						]
+
+						+ SOverlay::Slot()
+						.HAlign(HAlign_Right)
+						.VAlign(VAlign_Center)
+						[
+							SNew(SDialogueGraphInitStatus, switcherNode)
+						]
+					]
 				]
 
-				+ SHorizontalBox::Slot()
-				.FillWidth(1.0f)
+				+ SVerticalBox::Slot()
+				.AutoHeight()
 				[
-					SNew(SBox)
-					.MinDesiredWidth(520.0f)
+					SNew(SHorizontalBox)
+
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.VAlign(VAlign_Center)
+					.Padding(2.0f)
 					[
-						content
+						inputWidget
+					]
+
+					+ SHorizontalBox::Slot()
+					.FillWidth(1.0f)
+					[
+						SNew(SBox)
+						.MinDesiredWidth(520.0f)
+						[
+							content
+						]
 					]
 				]
 			]

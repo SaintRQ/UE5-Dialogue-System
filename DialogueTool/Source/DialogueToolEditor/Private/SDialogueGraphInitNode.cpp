@@ -53,50 +53,19 @@ void SDialogueGraphInitNode::UpdateGraphNode()
 	[
 		SNew(SBorder)
 		.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
-		.BorderBackgroundColor(FLinearColor(0.015f, 0.075f, 0.24f))
+		.BorderBackgroundColor(FLinearColor(0.025f, 0.2f, 0.38f))
 		.Padding(12.0f, 8.0f)
 		[
-			SNew(SVerticalBox)
-
-			+ SVerticalBox::Slot()
-			.AutoHeight()
-			.HAlign(HAlign_Center)
-			[
-				SNew(STextBlock)
-				.Text(LOCTEXT("InTitle", "IN"))
-				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 24))
-				.ColorAndOpacity(FLinearColor(0.18f, 0.72f, 1.0f))
-				.ShadowOffset(FVector2D(1.0f, 1.0f))
-			]
-
-			+ SVerticalBox::Slot()
-			.AutoHeight()
-			.HAlign(HAlign_Center)
-			[
-				SNew(STextBlock)
+			SNew(STextBlock)
 				.Text(bLibrary
-					? LOCTEXT("LibraryNodeTitle", "LIBRARY START")
-					: LOCTEXT("NodeTitle", "DIALOGUE START"))
-				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
+					? LOCTEXT("LibraryNodeTitle", "START")
+					: LOCTEXT("NodeTitle", "START"))
+				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 15))
 				.ColorAndOpacity(FLinearColor(0.65f, 0.82f, 1.0f))
-			]
+			    .Justification(ETextJustify::Center)
 		]
 	];
-
-	content->AddSlot(0, 1, SGridPanel::Layer(0))
-	.RowSpan(initCount + 1)
-	.Padding(2.0f)
-	[
-		SNew(SBorder)
-		.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-		.BorderBackgroundColor(FLinearColor(0.08f, 0.4f, 0.95f))
-		.Padding(2.0f)
-		[
-			SNew(SBorder)
-			.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-			.BorderBackgroundColor(FLinearColor(0.008f, 0.012f, 0.018f))
-		]
-	];
+	
 
 	if (initData)
 	{
@@ -184,7 +153,7 @@ void SDialogueGraphInitNode::UpdateGraphNode()
 	.Padding(10.0f, 6.0f, 8.0f, 10.0f)
 	[
 		SNew(SDialogueAddButton)
-		.Color(FLinearColor(0.04f, 0.48f, 1.0f))
+		.Color(FLinearColor(0.04f, 0.48f, 1.0f, 0.5f))
 		.OnClicked(this, &SDialogueGraphInitNode::OnAddInit)
 	];
 

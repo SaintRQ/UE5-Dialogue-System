@@ -67,51 +67,51 @@ void SDialogueGraphTransitNode::UpdateGraphNode()
 			.BorderBackgroundColor(FLinearColor(0.055f, 0.018f, 0.09f))
 			.Padding(0.0f)
 			[
-				SNew(SHorizontalBox)
+				SNew(SVerticalBox)
 
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				.VAlign(VAlign_Center)
-				.Padding(2.0f)
+				+ SVerticalBox::Slot()
+				.AutoHeight()
 				[
-					inputWidget
-				]
-
-				+ SHorizontalBox::Slot()
-				.FillWidth(1.0f)
-				[
-					SNew(SVerticalBox)
-
-					+ SVerticalBox::Slot()
-					.AutoHeight()
+					SNew(SBorder)
+					.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
+					.BorderBackgroundColor(FLinearColor(0.24f, 0.055f, 0.42f))
+					.Padding(8.0f, 6.0f)
 					[
-						SNew(SBorder)
-						.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
-						.BorderBackgroundColor(FLinearColor(0.24f, 0.055f, 0.42f))
-						.Padding(8.0f, 6.0f)
+						SNew(SOverlay)
+
+						+ SOverlay::Slot()
+						.HAlign(HAlign_Center)
 						[
-							SNew(SOverlay)
+							SNew(STextBlock)
+							.Text(LOCTEXT("NodeTitle", "TRANSIT"))
+							.Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+							.ColorAndOpacity(FLinearColor(0.8f, 0.52f, 1.0f))
+						]
 
-							+ SOverlay::Slot()
-							.HAlign(HAlign_Center)
-							[
-								SNew(STextBlock)
-								.Text(LOCTEXT("NodeTitle", "TRANSIT"))
-								.Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
-								.ColorAndOpacity(FLinearColor(0.8f, 0.52f, 1.0f))
-							]
-
-							+ SOverlay::Slot()
-							.HAlign(HAlign_Right)
-							.VAlign(VAlign_Center)
-							[
-								SNew(SDialogueGraphInitStatus, transitNode)
-							]
+						+ SOverlay::Slot()
+						.HAlign(HAlign_Right)
+						.VAlign(VAlign_Center)
+						[
+							SNew(SDialogueGraphInitStatus, transitNode)
 						]
 					]
+				]
 
-					+ SVerticalBox::Slot()
-					.AutoHeight()
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					SNew(SHorizontalBox)
+
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.VAlign(VAlign_Center)
+					.Padding(2.0f)
+					[
+						inputWidget
+					]
+
+					+ SHorizontalBox::Slot()
+					.FillWidth(1.0f)
 					.Padding(10.0f, 8.0f, 10.0f, 10.0f)
 					[
 						SNew(SBox)
@@ -126,14 +126,14 @@ void SDialogueGraphTransitNode::UpdateGraphNode()
 							.DisplayUseSelected(true)
 						]
 					]
-				]
 
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				.VAlign(VAlign_Center)
-				.Padding(2.0f)
-				[
-					outputWidget
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.VAlign(VAlign_Center)
+					.Padding(2.0f)
+					[
+						outputWidget
+					]
 				]
 			]
 		]

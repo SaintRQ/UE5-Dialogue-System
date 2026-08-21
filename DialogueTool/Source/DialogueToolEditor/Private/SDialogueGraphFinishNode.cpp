@@ -59,22 +59,15 @@ void SDialogueGraphFinishNode::UpdateGraphNode()
 			.BorderBackgroundColor(FLinearColor(0.08f, 0.008f, 0.004f))
 			.Padding(0.0f)
 			[
-				SNew(SHorizontalBox)
+				SNew(SVerticalBox)
 
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				.VAlign(VAlign_Center)
-				.Padding(2.0f)
+				+ SVerticalBox::Slot()
+				.AutoHeight()
 				[
-					inputWidget
-				]
-
-				+ SHorizontalBox::Slot()
-				.AutoWidth()
-				[
-					SNew(SBox)
-					.MinDesiredWidth(240.0f)
-					.MinDesiredHeight(80.0f)
+					SNew(SBorder)
+					.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
+					.BorderBackgroundColor(FLinearColor(0.38f, 0.055f, 0.025f))
+					.Padding(8.0f, 6.0f)
 					[
 						SNew(SOverlay)
 
@@ -93,11 +86,32 @@ void SDialogueGraphFinishNode::UpdateGraphNode()
 
 						+ SOverlay::Slot()
 						.HAlign(HAlign_Right)
-						.VAlign(VAlign_Top)
-						.Padding(0.0f, 6.0f, 6.0f, 0.0f)
+						.VAlign(VAlign_Center)
 						[
 							SNew(SDialogueGraphInitStatus, finishNode)
 						]
+					]
+				]
+
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					SNew(SHorizontalBox)
+
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.VAlign(VAlign_Center)
+					.Padding(2.0f)
+					[
+						inputWidget
+					]
+
+					+ SHorizontalBox::Slot()
+					.FillWidth(1.0f)
+					[
+						SNew(SBox)
+						.MinDesiredWidth(240.0f)
+						.MinDesiredHeight(48.0f)
 					]
 				]
 			]

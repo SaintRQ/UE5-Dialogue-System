@@ -40,22 +40,7 @@ void SDialogueGraphActionNode::UpdateGraphNode()
 
 	UDialogueGraphActionNode* actionNode = GetActionNode();
 	TSharedRef<SVerticalBox> actionContent = SNew(SVerticalBox);
-	actionContent->AddSlot()
-	.AutoHeight()
-	.Padding(2.0f)
-	[
-		SNew(SBorder)
-		.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
-		.BorderBackgroundColor(FLinearColor(0.55f, 0.18f, 0.035f))
-		.Padding(6.0f, 4.0f)
-		[
-			SNew(STextBlock)
-			.Text(LOCTEXT("ActionSection", "Action Classes"))
-			.Font(FCoreStyle::GetDefaultFontStyle("Bold", 11))
-			.Justification(ETextJustify::Center)
-		]
-	];
-
+	
 	if (actionNode)
 	{
 		const TArray<TObjectPtr<UDialogueAction>>& actions = actionNode->GetActions();
@@ -116,7 +101,7 @@ void SDialogueGraphActionNode::UpdateGraphNode()
 	.Padding(4.0f)
 	[
 		SNew(SDialogueAddButton)
-		.Color(FLinearColor(0.82f, 0.16f, 0.055f))
+		.Color(FLinearColor(0.82f, 0.16f, 0.055f, 0.5))
 		.OnClicked(this, &SDialogueGraphActionNode::OnAddAction)
 	];
 
@@ -140,22 +125,14 @@ void SDialogueGraphActionNode::UpdateGraphNode()
 	.VAlign(VAlign_Center)
 	[
 		SNew(SBorder)
-		.BorderImage(FAppStyle::GetBrush("Graph.Node.Body"))
+		.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
 		.BorderBackgroundColor(this, &SDialogueGraphActionNode::GetBorderColor)
-		.Padding(0.0f)
+		.Padding(3.0f)
 		[
-			SNew(SHorizontalBox)
-
-			+ SHorizontalBox::Slot()
-			.AutoWidth()
-			.VAlign(VAlign_Center)
-			.Padding(2.0f)
-			[
-				inputWidget
-			]
-
-			+ SHorizontalBox::Slot()
-			.FillWidth(1.0f)
+			SNew(SBorder)
+			.BorderImage(FAppStyle::GetBrush("Graph.Node.Body"))
+			.BorderBackgroundColor(FLinearColor(0.055f, 0.018f, 0.09f))
+			.Padding(0.0f)
 			[
 				SNew(SVerticalBox)
 
@@ -164,7 +141,7 @@ void SDialogueGraphActionNode::UpdateGraphNode()
 				[
 					SNew(SBorder)
 					.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
-					.BorderBackgroundColor(FLinearColor(0.035f, 0.02f, 0.012f))
+					.BorderBackgroundColor(FLinearColor(0.9f, 0.3f, 0.012f, 0.5))
 					.Padding(8.0f, 6.0f)
 					[
 						SNew(SOverlay)
@@ -176,6 +153,7 @@ void SDialogueGraphActionNode::UpdateGraphNode()
 							SNew(STextBlock)
 							.Text(LOCTEXT("NodeTitle", "ACTIONS"))
 							.Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
+							.ColorAndOpacity(FLinearColor(0.8f, 0.3f, 0.1f))
 							.Justification(ETextJustify::Center)
 							.ShadowOffset(FVector2D(1.0f, 1.0f))
 						]
@@ -191,16 +169,29 @@ void SDialogueGraphActionNode::UpdateGraphNode()
 
 				+ SVerticalBox::Slot()
 				.AutoHeight()
-				.Padding(2.0f)
 				[
-					SNew(SBorder)
-					.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-					.BorderBackgroundColor(FLinearColor(0.85f, 0.3f, 0.06f))
+					SNew(SHorizontalBox)
+
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.VAlign(VAlign_Center)
+					.Padding(2.0f)
+					[
+						inputWidget
+					]
+
+					+ SHorizontalBox::Slot()
+					.FillWidth(1.0f)
 					.Padding(2.0f)
 					[
 						SNew(SBorder)
 						.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-						.BorderBackgroundColor(FLinearColor(0.008f, 0.012f, 0.018f))
+						.BorderBackgroundColor(FLinearColor(0.85f, 0.3f, 0.06f, 0))
+						.Padding(2.0f)
+						[
+							SNew(SBorder)
+						.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
+						.BorderBackgroundColor(FLinearColor(0.008f, 0.012f, 0.018f, 0))
 						.Padding(6.0f)
 						[
 							SNew(SBox)
@@ -210,15 +201,16 @@ void SDialogueGraphActionNode::UpdateGraphNode()
 							]
 						]
 					]
-				]
-			]
+					]
 
-			+ SHorizontalBox::Slot()
-			.AutoWidth()
-			.VAlign(VAlign_Center)
-			.Padding(2.0f)
-			[
-				outputWidget
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.VAlign(VAlign_Center)
+					.Padding(2.0f)
+					[
+						outputWidget
+					]
+				]
 			]
 		]
 	];
