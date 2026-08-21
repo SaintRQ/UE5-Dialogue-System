@@ -1,6 +1,6 @@
 # Dialogue Tool
 
-<img width="1653" height="654" alt="1" src="https://github.com/user-attachments/assets/37e18ea9-a194-4226-a596-3474a8adb539" />
+<img width="1479" height="750" alt="1" src="https://github.com/user-attachments/assets/1561fa4e-4fde-4ea1-a0ec-ac93c648eadb" />
 
 
 > **RU:** Dialogue Tool — плагин для Unreal Engine с визуальным редактором ветвящихся диалогов, переиспользуемыми библиотеками, условиями, действиями, Rich Text и независимым от UI runtime-проигрывателем.
