@@ -38,6 +38,7 @@ The current version is developed and verified with **Unreal Engine 5.6**. The No
 - [Подключение игрового UI в Blueprint](#подключение-игрового-ui-в-blueprint)
 - [Подключение в C++](#подключение-в-c)
 - [Runtime API](#runtime-api)
+- [Кеш диалога](#кеш-диалога)
 - [Логика выполнения](#логика-выполнения)
 - [Рекомендации](#рекомендации)
 - [Решение проблем](#решение-проблем)
@@ -53,8 +54,10 @@ The current version is developed and verified with **Unreal Engine 5.6**. The No
 - настройка параметров экземпляра условия или действия прямо внутри узла;
 - последовательное выполнение нескольких действий;
 - посимвольный вывод текста;
-- динамическое изменение текста - как самого топика, так и ответов.
+- динамическое изменение текста — как самого топика, так и ответов;
+- отдельный звук для каждой реплики и ответа через событие `OnPlaySound`;
 - поддержка Rich Text во время анимации текста;
+- кеш первого разговора, посещённых топиков и выбранных ответов;
 - выбор: скрыть недоступный ответ или оставить его видимым, но отключённым;
 - runtime-проигрыватель в виде `UGameInstanceSubsystem`;
 - UI не входит в плагин: можно подключить любой UMG, Common UI, Slate или собственный интерфейс.
@@ -110,6 +113,8 @@ DIALOGUE START: Default
 | Параметр | Назначение |
 |---|---|
 | `Auto Continue` | Автоматическая промотка текста (без клика). |
+| `Auto Continue Delay` | Задержка перед автоматическим продолжением в секундах. Доступна при включённом `Auto Continue`. |
+| `Allow Continue Click` | Разрешает ручной вызов `ContinueDialogue` при включённом `Auto Continue`. |
 | `Characters Per Second` | Скорость посимвольного вывода. Значение `0` или меньше показывает текст мгновенно. |
 | `Response End Dialogue Text` | Текст автоматически созданного ответа, завершающего обычный диалог. Рекомендуется задать непустое значение. |
 | `Response Return Dialogue Text` | Текст терминального ответа внутри библиотеки. По умолчанию — `Return`. |
@@ -120,6 +125,9 @@ DIALOGUE START: Default
 
 ```ini
 [/Script/DialogueTool.DialogueToolSettings]
+AutoContinue=false
+AutoContinueDelay=1.0
+AllowContinueClick=true
 CharactersPerSecond=20
 RichTextStyleSet=/Game/UI/DT_RichTextStyle.DT_RichTextStyle
 ResponseEndDialogueText=Finish dialogue
@@ -210,6 +218,8 @@ Blueprint-класс, унаследованный от `UDialogueAction`. Вы�
 
 В узле всегда остаётся хотя бы одна строка текста. Пустой текст допустим и раскрывается мгновенно. Если у темы есть ответы, они появятся сразу; если ответов нет, для продолжения всё равно потребуется `ContinueDialogue`.
 
+У каждой строки `Text` есть кнопка звука. Назначенный `USoundBase` передаётся через `OnPlaySound` при начале показа этой строки.
+
 Если ответов нет, у `TOPIC` есть один обычный выход. Если добавить ответы, у каждого ответа появляется собственный выход, а прежнее соединение переносится на первый ответ.
 
 Кнопки ответа:
@@ -220,6 +230,7 @@ Blueprint-класс, унаследованный от `UDialogueAction`. Вы�
 - в библиотеке красная кнопка называется `Add Return` и возвращает управление вызывающему диалогу;
 - кнопка с `?` — открыть список условий ответа;
 - кнопка с глазом — выбрать поведение при невыполненных условиях;
+- кнопка звука — назначить `USoundBase`, который будет передан через `OnPlaySound` при выборе ответа;
 - `-` — удалить ответ.
 
 Поведение кнопки с глазом:
@@ -313,7 +324,7 @@ TOPIC ──► ACTIONS ──► TOPIC
 6. Скомпилируйте и сохраните Blueprint.
 7. Откройте `?` у старта, ответа или ветки `SWITCH`, нажмите `Add` и выберите созданный класс.
 
-`Context` — объект, переданный вторым аргументом в `StartDialogue`. Если контекст не передан или перестал существовать, плагин использует `GameInstance`.
+`Context` — объект, переданный третьим аргументом в `StartDialogue`. Если контекст не передан или перестал существовать, плагин использует `GameInstance`.
 
 Чтобы параметр условия отображался прямо в редакторе диалога, создайте переменную в Blueprint и включите у неё `Instance Editable`.
 
@@ -323,9 +334,19 @@ TOPIC ──► ACTIONS ──► TOPIC
 - пустой список считается успешным;
 - незаполненная строка класса пропускается и не блокирует выполнение;
 - точки старта и ветки `SWITCH` используют первый успешный список;
-- условия ответа определяют `VisibleSuccess`, `VisibleFailure` или `Invisible`.
+- успешный ответ получает `VisibleSuccess`;
+- неуспешный ответ с включённым глазом получает `VisibleFailure`, а с выключенным глазом не попадает в `OnUpdateResponses`.
 
 Базовая реализация `UDialogueCondition` возвращает `true`, поэтому не забудьте переопределить `ExecuteCondition`.
+
+### Встроенные условия памяти
+
+Плагин содержит два готовых условия для списка conditions конкретного ответа:
+
+- `UDC_WasResponseSelected` автоматически проверяет, выбирался ли ранее содержащий его ответ;
+- `UDC_WasTopicVisited` автоматически проверяет, посещался ли содержащий ответ топик до текущего входа.
+
+В обоих условиях `ConditionResult = false` означает «ещё не выбирался/не посещался», а `true` — «уже выбирался/посещался». Ручные ID не нужны: ответы получают скрытые стабильные ID автоматически. Подробнее см. [Кеш диалога](#кеш-диалога).
 
 ## Действия (Actions)
 
@@ -334,7 +355,7 @@ TOPIC ──► ACTIONS ──► TOPIC
 1. Выберите `Content Browser > Add > Dialogue Tool > Dialogue Action`.
 2. Назовите Blueprint, например `BP_DA_GiveItem`.
 3. В `Overrides` выберите `Execute Action`.
-4. Приведите `Context` к нужному классу и выполните игровую логику.
+4. Используйте `Context` и текущий `FDialogueCache`, чтобы сформировать итоговый `FText`.
 5. Скомпилируйте и сохраните Blueprint.
 6. Добавьте в граф узел `ACTIONS` и выберите созданный класс.
 
@@ -414,20 +435,20 @@ This is <Important>important</> text.
 |---|---|
 | `On Update Text` | Передать `Text` в `RichTextBlock.SetText`. |
 | `On Update Responses` | Очистить контейнер и создать кнопки ответов. |
-| `On Dialogue Finished` | Скрыть UI, вернуть управление игроку и удалить подписки. |
+| `On Play Sound` | Воспроизвести переданный `USoundBase` для текущей реплики или выбранного ответа. |
+| `On Dialogue Finished` | Сохранить возвращённый `FDialogueCache`, скрыть UI, вернуть управление игроку и удалить подписки. |
 
 ### 3. Обработайте ответы
 
 В `On Update Responses` выполните `For Each Loop` по массиву:
 
-1. Если `Visibility == Invisible`, пропустите элемент.
-2. Для остальных создайте кнопку с полем `Response`.
-3. Если `Visibility == VisibleFailure`, покажите кнопку, но сделайте её недоступной.
-4. Если `Visibility == VisibleSuccess`, разрешите нажатие.
-5. Сохраните **исходный Array Index** в созданной кнопке.
-6. По нажатию вызовите `Select Response` с этим индексом.
+1. Для каждого полученного элемента создайте кнопку с полем `Response`.
+2. Если `Visibility == VisibleFailure`, покажите кнопку, но сделайте её недоступной.
+3. Если `Visibility == VisibleSuccess`, разрешите нажатие.
+4. Сохраните **Array Index из полученного массива** в созданной кнопке.
+5. По нажатию вызовите `Select Response` с этим индексом.
 
-> **Важно:** не перенумеровывайте ответы после фильтрации `Invisible`. `SelectResponse` ожидает индекс именно из массива, полученного событием `OnUpdateResponses`.
+> **Важно:** ответы с проваленными условиями и выключенным глазом уже исключены менеджером. `SelectResponse` ожидает индекс именно из массива, полученного событием `OnUpdateResponses`.
 
 ### 4. Обработайте продолжение
 
@@ -444,16 +465,17 @@ This is <Important>important</> text.
 После создания UI и подписки на события вызовите:
 
 ```text
-Start Dialogue(DialogueAsset, Context)
+Start Dialogue(DialogueAsset, Cache, Context)
 ```
 
 - `DialogueAsset` — обычный `Dialogue Object`;
+- `Cache` — ранее сохранённый `FDialogueCache` или новая пустая структура для первого разговора;
 - `Context` — NPC, Player Controller, компонент или другой объект, доступный условиям и действиям;
 - возвращаемое значение `false` означает, что запуск не состоялся.
 
 ### 6. Завершите или прервите диалог
 
-`Finish Dialogue` немедленно очищает runtime-состояние и вызывает `On Dialogue Finished`. Вызывайте его при принудительном закрытии интерфейса, смене уровня или отмене разговора.
+`Finish Dialogue` немедленно завершает runtime-проигрывание и вызывает `On Dialogue Finished` с обновлённым кешем. Вызывайте его при принудительном закрытии интерфейса, смене уровня или отмене разговора.
 
 ## Подключение в C++
 
@@ -484,13 +506,16 @@ UDialogueManager* dialogueManager = gameInstance
     ? gameInstance->GetSubsystem<UDialogueManager>()
     : nullptr;
 
+FDialogueCache DialogueCache; // Owning-class field stored per dialogue or NPC.
+
 if (dialogueManager && dialogue)
 {
     dialogueManager->OnUpdateText.AddUniqueDynamic(this, &ThisClass::OnDialogueTextUpdated);
     dialogueManager->OnUpdateResponses.AddUniqueDynamic(this, &ThisClass::OnDialogueResponsesUpdated);
     dialogueManager->OnDialogueFinished.AddUniqueDynamic(this, &ThisClass::OnDialogueFinished);
+    dialogueManager->OnPlaySound.AddUniqueDynamic(this, &ThisClass::OnPlaySound);
 
-    const bool started = dialogueManager->StartDialogue(dialogue, this);
+    const bool started = dialogueManager->StartDialogue(dialogue, DialogueCache, this);
     if (!started)
     {
         // Hide the UI and remove event bindings.
@@ -511,9 +536,9 @@ void OnDialogueTextUpdated(const FText& text);
 UFUNCTION()
 void OnDialogueResponsesUpdated(const TArray<FDialogueResponse>& responses);
 
-// Handles dialogue completion.
+// Stores updated dialogue memory and handles completion.
 UFUNCTION()
-void OnDialogueFinished();
+void OnDialogueFinished(const FDialogueCache& cache);
 
 // Plays a topic or response sound requested by the dialogue manager.
 UFUNCTION()
@@ -524,7 +549,7 @@ void UpdatePressMarkVisibility() const;
 
 ```
 
-При уничтожении UI или владельца удаляйте подписки. Если разговор нужно прервать, после удаления подписок вызовите `FinishDialogue` либо обработайте его событие до закрытия UI.
+В `OnDialogueFinished` сохраните полученный кеш и передайте его в следующий `StartDialogue`. При уничтожении UI или владельца удаляйте подписки. Если разговор нужно прервать, сначала обработайте `OnDialogueFinished`, чтобы не потерять обновлённую память.
 
 ### C++-условия и действия
 
@@ -546,17 +571,20 @@ virtual void ExecuteAction_Implementation(UObject* context) override;
 
 | Метод | Назначение |
 |---|---|
-| `StartDialogue(UDialogueObject*, UObject*)` | Сбрасывает прежнее состояние и запускает первый подходящий старт. Возвращает успех запуска. |
+| `GetFromContext(const UObject*)` | Возвращает manager, связанный с `World` переданного объекта. Доступен в C++. |
+| `StartDialogue(UDialogueObject*, const FDialogueCache&, UObject*)` | Сбрасывает runtime-состояние, копирует входной кеш и запускает первый подходящий старт. Возвращает успех запуска. |
 | `ContinueDialogue()` | Завершает текущую анимацию текста или переходит к следующей строке. |
 | `SelectResponse(int32)` | Выбирает доступный ответ по исходному индексу события. |
 | `FinishDialogue()` | Немедленно завершает активный диалог и рассылает событие завершения. |
+| `GetDialogueCache()` | Возвращает текущий рабочий кеш активного диалога. |
 | `IsWaitingForContinue()` | Возвращает `true`, когда runtime ожидает явный вызов `ContinueDialogue`. |
 
 | Событие | Данные |
 |---|---|
 | `OnUpdateText` | Текущий видимый `FText`, включая промежуточные стадии анимации. |
-| `OnUpdateResponses` | Полный массив `FDialogueResponse`, включая скрытые и отключённые ответы. |
-| `OnDialogueFinished` | Уведомление о полном завершении или принудительной остановке. |
+| `OnUpdateResponses` | Массив показанных ответов: успешных и оставленных видимыми неуспешных. |
+| `OnPlaySound` | `USoundBase*`, назначенный текущей реплике или выбранному ответу. |
+| `OnDialogueFinished` | Обновлённый `FDialogueCache` после полного завершения или принудительной остановки. |
 
 `FDialogueResponse.Visibility`:
 
@@ -564,11 +592,28 @@ virtual void ExecuteAction_Implementation(UObject* context) override;
 |---|---|
 | `VisibleSuccess` | Показать и разрешить выбор. |
 | `VisibleFailure` | Показать, но запретить выбор. |
-| `Invisible` | Не показывать, сохранив индексы остальных элементов. |
+
+Ответ с проваленными conditions и выключенным глазом не получает отдельное значение видимости: он не добавляется в массив `OnUpdateResponses`.
+
+## Кеш диалога
+
+`FDialogueCache` передаётся в `StartDialogue`, изменяется manager во время разговора и возвращается через `OnDialogueFinished`. Чтобы память сохранялась между разговорами, владелец диалога должен сохранить возвращённую структуру и передать её при следующем запуске.
+
+| Поле | Назначение |
+|---|---|
+| `IsFirstTalk` | Изначально `true`; перед `OnDialogueFinished` переключается в `false`. |
+| `TopicsMemory` | Скрытые ID топиков, которые были посещены хотя бы один раз. |
+| `ResponsesMemory` | Скрытые ID обычных ответов, которые игрок выбирал хотя бы один раз. |
+
+ID топиков и ответов создаются и мигрируются автоматически. При копировании ноды ответы получают новые ID. Терминальные `Finish/Return` responses в `ResponsesMemory` не записываются.
+
+`UDC_WasResponseSelected` и `UDC_WasTopicVisited` автоматически используют ID того response и topic, внутри которых находятся. Они предназначены для conditions ответа и не требуют ручной настройки ссылки.
+
+Плагин не записывает кеш в SaveGame автоматически. Если память должна переживать смену уровня или перезапуск игры, сериализуйте `FDialogueCache` в своей системе сохранений.
 
 ## Логика выполнения
 
-1. `StartDialogue` полностью сбрасывает предыдущий разговор.
+1. `StartDialogue` сбрасывает предыдущее runtime-состояние и копирует переданный `FDialogueCache`.
 2. Библиотеку нельзя передать в `StartDialogue`.
 3. Стартовые записи проверяются сверху вниз; все условия записи должны пройти.
 4. Действия стартовой линии выполняются до первого целевого узла.
@@ -578,7 +623,7 @@ virtual void ExecuteAction_Implementation(UObject* context) override;
 8. `SWITCH` выбирает первую успешную ветку.
 9. `TRANSIT` временно переключает активный ассет на библиотеку.
 10. `RETURN` восстанавливает основной диалог и продолжает его с выхода `Return`.
-11. `FINISH DIALOGUE`, терминальный ответ или `FinishDialogue()` очищают состояние и вызывают `OnDialogueFinished`.
+11. `FINISH DIALOGUE`, терминальный ответ или `FinishDialogue()` возвращают обновлённый кеш через `OnDialogueFinished` и очищают runtime-состояние.
 
 Если поток пришёл в отсутствующее или неподключённое продолжение, менеджер создаёт терминальный ответ автоматически. Это защищает игру от зависания на незавершённой ветке, но обычно также указывает на неподключённый узел.
 
@@ -591,7 +636,8 @@ virtual void ExecuteAction_Implementation(UObject* context) override;
 - Не оставляйте пустые строки классов в условиях и действиях: они разрешены, но усложняют проверку графа.
 - Передавайте осмысленный `Context` и используйте одинаковый ожидаемый тип во всех условиях и действиях конкретного диалога.
 - Подписывайте UI на события **до** `StartDialogue`.
-- Храните исходный индекс каждого ответа.
+- Храните индекс каждого ответа из массива `OnUpdateResponses`.
+- Сохраняйте кеш из `OnDialogueFinished` и передавайте его в следующий `StartDialogue`.
 - Используйте `Add Finish` для явного выбора игрока и `FINISH DIALOGUE` для автоматического завершения.
 - Выносите повторяющиеся последовательности в `Dialogue Library`.
 - Назначайте используемые диалоги через `UPROPERTY` или другие cook-доступные ссылки, чтобы ассеты попали в packaged build.
@@ -631,11 +677,11 @@ virtual void ExecuteAction_Implementation(UObject* context) override;
 
 ### Ответ выбирает неправильную ветку
 
-В UI был использован индекс после фильтрации скрытых ответов. Передавайте в `SelectResponse` исходный `Array Index` из `OnUpdateResponses`.
+В UI был передан индекс, не совпадающий с позицией в полученном массиве. Передавайте в `SelectResponse` точный `Array Index` из `OnUpdateResponses`.
 
 ### Недоступный ответ всё равно виден
 
-Кнопка с глазом включает режим `AlwaysVisible`: ответ должен быть видимым, но отключённым. Выключите её, чтобы получить `Invisible`, либо обработайте `Visibility` в UI.
+Кнопка с глазом включает режим `AlwaysVisible`: ответ должен быть видимым, но отключённым. При выключенном глазе ответ с проваленными conditions вообще не приходит в `OnUpdateResponses`.
 
 ### Rich Text-теги не появляются в контекстном меню
 
@@ -677,6 +723,7 @@ virtual void ExecuteAction_Implementation(UObject* context) override;
 - [Connecting Game UI in Blueprint](#connecting-game-ui-in-blueprint)
 - [C++ Integration](#c-integration)
 - [Runtime API](#runtime-api-1)
+- [Dialogue Cache](#dialogue-cache)
 - [Execution Flow](#execution-flow)
 - [Recommendations](#recommendations)
 - [Troubleshooting](#troubleshooting)
@@ -693,7 +740,9 @@ virtual void ExecuteAction_Implementation(UObject* context) override;
 - sequential execution of multiple actions;
 - character-by-character text output;
 - dynamic text replacement for both topics and responses;
+- separate sounds for dialogue lines and responses through `OnPlaySound`;
 - Rich Text support during text animation;
+- first-talk, visited-topic, and selected-response memory;
 - choice between hiding unavailable responses or showing them disabled;
 - a runtime player implemented as a `UGameInstanceSubsystem`;
 - UI is not included in the plugin: you can use any UMG, Common UI, Slate, or custom interface.
@@ -748,15 +797,22 @@ Settings are located at `Project Settings > Plugins > Dialogue Tool` and are sav
 
 | Setting | Purpose |
 |---|---|
+| `Auto Continue` | Automatically advances fully revealed text when no response is waiting. |
+| `Auto Continue Delay` | Delay before automatic continuation in seconds. Available when `Auto Continue` is enabled. |
+| `Allow Continue Click` | Allows manual `ContinueDialogue` calls while `Auto Continue` is enabled. |
 | `Characters Per Second` | Character-by-character output speed. A value of `0` or less displays text instantly. |
 | `Response End Dialogue Text` | Text of the automatically created response that ends a normal dialogue. A non-empty value is recommended. |
 | `Response Return Dialogue Text` | Text of the terminal response inside a library. Default: `Return`. |
+| `Response Custom Text List` | Predefined response texts available through the `Add Custom` button in a `TOPIC` node. |
 | `Rich Text Style Set` | Data Table using the `RichTextStyleRow` structure. The editor uses it for the tag menu; the same table should be assigned to in-game `RichTextBlock` widgets. |
 
 Equivalent configuration:
 
 ```ini
 [/Script/DialogueTool.DialogueToolSettings]
+AutoContinue=false
+AutoContinueDelay=1.0
+AllowContinueClick=true
 CharactersPerSecond=20
 RichTextStyleSet=/Game/UI/DT_RichTextStyle.DT_RichTextStyle
 ResponseEndDialogueText=Finish dialogue
@@ -846,6 +902,8 @@ The main dialogue node. It contains `Text` and `Response` sections.
 
 The node always keeps at least one text row. Empty text is allowed and is revealed instantly. If the topic has responses, they are shown immediately; if it has no responses, `ContinueDialogue` is still required to proceed.
 
+Each `Text` row has a sound button. Its assigned `USoundBase` is sent through `OnPlaySound` when that line starts.
+
 If there are no responses, `TOPIC` has one normal output. When responses are added, each response gets its own output and the previous connection is moved to the first response.
 
 Response buttons:
@@ -856,6 +914,7 @@ Response buttons:
 - in a library, the red button is named `Add Return` and returns control to the calling dialogue;
 - `?` — open the response condition list;
 - eye button — choose behavior when response conditions fail;
+- sound button — assign a `USoundBase` sent through `OnPlaySound` when the response is selected;
 - `-` — remove the response.
 
 Eye-button behavior:
@@ -948,7 +1007,7 @@ The indicator in a node header shows whether a path from the start node to that 
 6. Compile and save the Blueprint.
 7. Open `?` on a start, response, or `SWITCH` branch, click `Add`, and select the created class.
 
-`Context` is the object passed as the second argument to `StartDialogue`. If no context is provided or the object is no longer valid, the plugin uses `GameInstance`.
+`Context` is the object passed as the third argument to `StartDialogue`. If no context is provided or the object is no longer valid, the plugin uses `GameInstance`.
 
 To expose a condition parameter directly in the dialogue editor, create a Blueprint variable and enable `Instance Editable`.
 
@@ -958,9 +1017,19 @@ Evaluation rules:
 - an empty list is considered successful;
 - an empty class row is skipped and does not block execution;
 - start points and `SWITCH` branches use the first successful list;
-- response conditions determine `VisibleSuccess`, `VisibleFailure`, or `Invisible`.
+- a successful response receives `VisibleSuccess`;
+- a failed response with the eye enabled receives `VisibleFailure`; with the eye disabled, it is omitted from `OnUpdateResponses`.
 
 The base `UDialogueCondition` implementation returns `true`, so remember to override `ExecuteCondition`.
+
+### Built-in Memory Conditions
+
+The plugin includes two conditions intended for a specific response's condition list:
+
+- `UDC_WasResponseSelected` automatically checks whether its containing response was selected before;
+- `UDC_WasTopicVisited` automatically checks whether the topic containing that response was visited before the current entry.
+
+For both conditions, `ConditionResult = false` means “not selected/visited yet,” while `true` means “already selected/visited.” No manual IDs are required: responses receive hidden stable IDs automatically. See [Dialogue Cache](#dialogue-cache) for details.
 
 ## Actions
 
@@ -969,7 +1038,7 @@ The base `UDialogueCondition` implementation returns `true`, so remember to over
 1. Choose `Content Browser > Add > Dialogue Tool > Dialogue Action`.
 2. Name the Blueprint, for example `BP_DA_GiveItem`.
 3. In `Overrides`, select `Execute Action`.
-4. Cast `Context` to the required class and execute your gameplay logic.
+4. Use `Context` and the current `FDialogueCache` to generate the resulting `FText`.
 5. Compile and save the Blueprint.
 6. Add an `ACTIONS` node to the graph and select the created class.
 
@@ -1049,20 +1118,20 @@ Bind to events before calling `Start Dialogue`, otherwise the first text update 
 |---|---|
 | `On Update Text` | Pass `Text` to `RichTextBlock.SetText`. |
 | `On Update Responses` | Clear the container and create response buttons. |
-| `On Dialogue Finished` | Hide the UI, restore player control, and remove bindings. |
+| `On Play Sound` | Play the supplied `USoundBase` for the current line or selected response. |
+| `On Dialogue Finished` | Store the returned `FDialogueCache`, hide the UI, restore player control, and remove bindings. |
 
 ### 3. Handle Responses
 
 Inside `On Update Responses`, run a `For Each Loop` over the array:
 
-1. If `Visibility == Invisible`, skip the element.
-2. For every other element, create a button using its `Response` field.
-3. If `Visibility == VisibleFailure`, show the button but disable it.
-4. If `Visibility == VisibleSuccess`, allow it to be clicked.
-5. Store the **original Array Index** in the created button.
-6. On click, call `Select Response` using that index.
+1. Create a button for every received element using its `Response` field.
+2. If `Visibility == VisibleFailure`, show the button but disable it.
+3. If `Visibility == VisibleSuccess`, allow it to be clicked.
+4. Store the **Array Index from the received array** in the created button.
+5. On click, call `Select Response` using that index.
 
-> **Important:** do not renumber responses after filtering out `Invisible` entries. `SelectResponse` expects the index from the exact array received in `OnUpdateResponses`.
+> **Important:** failed responses with the eye disabled have already been omitted by the manager. `SelectResponse` expects the index from the exact array received in `OnUpdateResponses`.
 
 ### 4. Handle Continue
 
@@ -1079,16 +1148,17 @@ On a click in the dialogue area or on the relevant input button, call `Continue 
 After creating the UI and binding its events, call:
 
 ```text
-Start Dialogue(DialogueAsset, Context)
+Start Dialogue(DialogueAsset, Cache, Context)
 ```
 
 - `DialogueAsset` — a normal `Dialogue Object`;
+- `Cache` — a previously stored `FDialogueCache`, or a new empty structure for the first conversation;
 - `Context` — an NPC, Player Controller, component, or another object available to conditions and actions;
 - a return value of `false` means the dialogue failed to start.
 
 ### 6. Finish or Interrupt the Dialogue
 
-`Finish Dialogue` immediately clears runtime state and fires `On Dialogue Finished`. Call it when forcibly closing the UI, changing levels, or canceling a conversation.
+`Finish Dialogue` immediately ends runtime playback and fires `On Dialogue Finished` with the updated cache. Call it when forcibly closing the UI, changing levels, or canceling a conversation.
 
 ## C++ Integration
 
@@ -1119,13 +1189,16 @@ UDialogueManager* dialogueManager = gameInstance
     ? gameInstance->GetSubsystem<UDialogueManager>()
     : nullptr;
 
+FDialogueCache DialogueCache; // Owning-class field stored per dialogue or NPC.
+
 if (dialogueManager && dialogue)
 {
     dialogueManager->OnUpdateText.AddUniqueDynamic(this, &ThisClass::OnDialogueTextUpdated);
     dialogueManager->OnUpdateResponses.AddUniqueDynamic(this, &ThisClass::OnDialogueResponsesUpdated);
     dialogueManager->OnDialogueFinished.AddUniqueDynamic(this, &ThisClass::OnDialogueFinished);
+    dialogueManager->OnPlaySound.AddUniqueDynamic(this, &ThisClass::OnPlaySound);
 
-    const bool started = dialogueManager->StartDialogue(dialogue, this);
+    const bool started = dialogueManager->StartDialogue(dialogue, DialogueCache, this);
     if (!started)
     {
         // Hide the UI and remove event bindings.
@@ -1146,9 +1219,9 @@ void OnDialogueTextUpdated(const FText& text);
 UFUNCTION()
 void OnDialogueResponsesUpdated(const TArray<FDialogueResponse>& responses);
 
-// Handles dialogue completion.
+// Stores updated dialogue memory and handles completion.
 UFUNCTION()
-void OnDialogueFinished();
+void OnDialogueFinished(const FDialogueCache& cache);
 
 // Plays a topic or response sound requested by the dialogue manager.
 UFUNCTION()
@@ -1158,7 +1231,7 @@ void OnPlaySound(USoundBase* Sound);
 void UpdatePressMarkVisibility() const;
 ```
 
-When the UI or its owner is destroyed, remove event bindings. If the conversation must be interrupted, call `FinishDialogue` after removing bindings, or process its event before closing the UI.
+Store the received cache in `OnDialogueFinished` and pass it to the next `StartDialogue`. When the UI or its owner is destroyed, remove event bindings. If the conversation must be interrupted, process `OnDialogueFinished` first so the updated memory is not lost.
 
 ### C++ Conditions and Actions
 
@@ -1180,17 +1253,20 @@ Properties declared with `UPROPERTY(EditAnywhere)` are available for per-instanc
 
 | Method | Purpose |
 |---|---|
-| `StartDialogue(UDialogueObject*, UObject*)` | Resets previous state and starts the first matching start entry. Returns whether startup succeeded. |
+| `GetFromContext(const UObject*)` | Returns the manager associated with the supplied object's `World`. Available in C++. |
+| `StartDialogue(UDialogueObject*, const FDialogueCache&, UObject*)` | Resets runtime state, copies the supplied cache, and starts the first matching start entry. Returns whether startup succeeded. |
 | `ContinueDialogue()` | Finishes the current text animation or advances to the next line. |
 | `SelectResponse(int32)` | Selects an available response using the original event-array index. |
 | `FinishDialogue()` | Immediately ends the active dialogue and broadcasts the completion event. |
+| `GetDialogueCache()` | Returns the working cache of the active dialogue. |
 | `IsWaitingForContinue()` | Returns `true` while runtime is waiting for an explicit `ContinueDialogue` call. |
 
 | Event | Data |
 |---|---|
 | `OnUpdateText` | Current visible `FText`, including intermediate animation states. |
-| `OnUpdateResponses` | Full `FDialogueResponse` array, including hidden and disabled responses. |
-| `OnDialogueFinished` | Notification that the dialogue fully finished or was forcibly stopped. |
+| `OnUpdateResponses` | Responses included for display: successful responses and failed responses kept visible. |
+| `OnPlaySound` | The `USoundBase*` assigned to the current line or selected response. |
+| `OnDialogueFinished` | Updated `FDialogueCache` after normal completion or a forced stop. |
 
 `FDialogueResponse.Visibility`:
 
@@ -1198,11 +1274,28 @@ Properties declared with `UPROPERTY(EditAnywhere)` are available for per-instanc
 |---|---|
 | `VisibleSuccess` | Show and allow selection. |
 | `VisibleFailure` | Show but disable selection. |
-| `Invisible` | Do not show; preserve the indices of the other entries. |
+
+A response whose conditions fail while the eye is disabled does not receive a separate visibility value; it is omitted from the `OnUpdateResponses` array.
+
+## Dialogue Cache
+
+`FDialogueCache` is passed to `StartDialogue`, modified by the manager during playback, and returned through `OnDialogueFinished`. To retain memory between conversations, the dialogue owner must store the returned structure and supply it to the next start.
+
+| Field | Purpose |
+|---|---|
+| `IsFirstTalk` | Initially `true`; changed to `false` before `OnDialogueFinished`. |
+| `TopicsMemory` | Hidden IDs of topics visited at least once. |
+| `ResponsesMemory` | Hidden IDs of normal responses selected at least once. |
+
+Topic and response IDs are generated and migrated automatically. Responses receive new IDs when a node is copied. Terminal `Finish/Return` responses are not stored in `ResponsesMemory`.
+
+`UDC_WasResponseSelected` and `UDC_WasTopicVisited` automatically use the response and topic containing them. They are intended for response condition lists and require no manually configured reference.
+
+The plugin does not write the cache to a SaveGame automatically. Serialize `FDialogueCache` in your own save system if the memory must survive level changes or application restarts.
 
 ## Execution Flow
 
-1. `StartDialogue` completely resets the previous conversation.
+1. `StartDialogue` resets previous runtime state and copies the supplied `FDialogueCache`.
 2. A library cannot be passed to `StartDialogue`.
 3. Start entries are evaluated from top to bottom; every condition in the entry must pass.
 4. Actions on the start line execute before the first target node.
@@ -1212,7 +1305,7 @@ Properties declared with `UPROPERTY(EditAnywhere)` are available for per-instanc
 8. `SWITCH` selects the first successful branch.
 9. `TRANSIT` temporarily changes the active asset to a library.
 10. `RETURN` restores the main dialogue and continues from the `Return` output.
-11. `FINISH DIALOGUE`, a terminal response, or `FinishDialogue()` clears state and fires `OnDialogueFinished`.
+11. `FINISH DIALOGUE`, a terminal response, or `FinishDialogue()` returns the updated cache through `OnDialogueFinished` and clears runtime state.
 
 If flow reaches a missing or unconnected continuation, the manager automatically creates a terminal response. This prevents the game from getting stuck on an unfinished branch, but usually also indicates an unconnected node.
 
@@ -1225,7 +1318,8 @@ Calling `StartDialogue` again while a conversation is active resets the previous
 - Do not leave empty class rows in conditions or actions: they are allowed, but make graph validation harder.
 - Pass a meaningful `Context` and use the same expected context type in all conditions and actions of a given dialogue.
 - Bind UI events **before** `StartDialogue`.
-- Preserve the original index of every response.
+- Preserve each response index from the `OnUpdateResponses` array.
+- Store the cache from `OnDialogueFinished` and pass it to the next `StartDialogue`.
 - Use `Add Finish` for an explicit player choice and `FINISH DIALOGUE` for automatic completion.
 - Move repeated sequences into a `Dialogue Library`.
 - Reference used dialogues through `UPROPERTY` or other cook-visible references so the assets are included in packaged builds.
@@ -1265,11 +1359,11 @@ Fill in `Response End Dialogue Text` and `Response Return Dialogue Text` in the 
 
 ### A Response Selects the Wrong Branch
 
-The UI used an index generated after hidden responses were filtered out. Pass the original `Array Index` from `OnUpdateResponses` to `SelectResponse`.
+The UI passed an index that did not match the position in the received array. Pass the exact `Array Index` from `OnUpdateResponses` to `SelectResponse`.
 
 ### An Unavailable Response Is Still Visible
 
-The eye button enables `AlwaysVisible`: the response should remain visible but disabled. Turn it off to get `Invisible`, or handle `Visibility` in the UI.
+The eye button enables `AlwaysVisible`: the response should remain visible but disabled. With the eye disabled, a response whose conditions fail is omitted from `OnUpdateResponses` entirely.
 
 ### Rich Text Tags Do Not Appear in the Context Menu
 
