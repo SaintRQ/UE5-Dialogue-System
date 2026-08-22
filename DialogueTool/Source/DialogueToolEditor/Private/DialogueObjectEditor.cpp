@@ -6,6 +6,7 @@
 #include "DialogueGraphLibrarySchema.h"
 #include "DialogueGraphNode.h"
 #include "DialogueGraphSchema.h"
+#include "DialogueGraphSkipTextNode.h"
 #include "DialogueGraphSwitcherNode.h"
 #include "DialogueGraphTransitNode.h"
 #include "DialogueLibraryObject.h"
@@ -414,6 +415,10 @@ void FDialogueObjectEditor::CopySelectedNodes()
 		{
 			transitNode->FinishCopying();
 		}
+		else if (UDialogueGraphSkipTextNode* skipTextNode = Cast<UDialogueGraphSkipTextNode>(selectedObject))
+		{
+			skipTextNode->FinishCopying();
+		}
 	}
 }
 
@@ -498,6 +503,10 @@ void FDialogueObjectEditor::PasteNodesHere(const FVector2f& location)
 		{
 			pastedNodeIds.Add(transitNode->GetPastedFromTransitNodeId(), transitNode->GetTransitNodeId());
 		}
+		else if (UDialogueGraphSkipTextNode* skipTextNode = Cast<UDialogueGraphSkipTextNode>(pastedNode))
+		{
+			pastedNodeIds.Add(skipTextNode->GetPastedFromSkipTextNodeId(), skipTextNode->GetSkipTextNodeId());
+		}
 
 		pastedNode->NodePosX = FMath::RoundToInt(pastedNode->NodePosX - averagePosition.X + location.X);
 		pastedNode->NodePosY = FMath::RoundToInt(pastedNode->NodePosY - averagePosition.Y + location.Y);
@@ -522,6 +531,11 @@ void FDialogueObjectEditor::PasteNodesHere(const FVector2f& location)
 		{
 			transitNode->RemapPastedConnections(pastedNodeIds);
 			transitNode->NodeConnectionListChanged();
+		}
+		else if (UDialogueGraphSkipTextNode* skipTextNode = Cast<UDialogueGraphSkipTextNode>(pastedNode))
+		{
+			skipTextNode->RemapPastedConnections(pastedNodeIds);
+			skipTextNode->NodeConnectionListChanged();
 		}
 	}
 

@@ -4,6 +4,7 @@
 
 #include "DialogueGraphInitNode.h"
 #include "DialogueGraphNode.h"
+#include "DialogueGraphSkipTextNode.h"
 #include "DialogueGraphSwitcherNode.h"
 #include "DialogueGraphTransitNode.h"
 #include "DialogueObject.h"
@@ -210,6 +211,10 @@ void UDialogueGraphActionNode::RefreshDialogueNodes() const
 			else if (UDialogueGraphTransitNode* transitNode = Cast<UDialogueGraphTransitNode>(node))
 			{
 				transitNode->RefreshOutputConnection();
+			}
+			else if (UDialogueGraphSkipTextNode* skipTextNode = Cast<UDialogueGraphSkipTextNode>(node))
+			{
+				skipTextNode->RefreshOutputConnection();
 			}
 		}
 	}

@@ -117,6 +117,7 @@ int64 UDialogueObject::GenerateUniqueId() const
 		|| DialogueNodes.Contains(id)
 		|| DialogueSwitchers.Contains(id)
 		|| DialogueTransits.Contains(id)
+		|| DialogueSkipTexts.Contains(id)
 		|| containsResponseId(id));
 
 	return id;
@@ -189,6 +190,26 @@ const FDialogueTransit* UDialogueObject::FindDialogueTransit(int64 transitId) co
 void UDialogueObject::RemoveDialogueTransit(int64 transitId)
 {
 	DialogueTransits.Remove(transitId);
+}
+
+FDialogueSkipText& UDialogueObject::AddDialogueSkipText(int64 skipTextId)
+{
+	return DialogueSkipTexts.FindOrAdd(skipTextId);
+}
+
+FDialogueSkipText* UDialogueObject::FindDialogueSkipText(int64 skipTextId)
+{
+	return DialogueSkipTexts.Find(skipTextId);
+}
+
+const FDialogueSkipText* UDialogueObject::FindDialogueSkipText(int64 skipTextId) const
+{
+	return DialogueSkipTexts.Find(skipTextId);
+}
+
+void UDialogueObject::RemoveDialogueSkipText(int64 skipTextId)
+{
+	DialogueSkipTexts.Remove(skipTextId);
 }
 
 TArray<FDialogueInit>& UDialogueObject::GetDialogueInitData()

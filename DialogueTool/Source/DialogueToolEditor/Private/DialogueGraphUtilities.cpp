@@ -7,6 +7,7 @@
 #include "DialogueGraphInitNode.h"
 #include "DialogueGraphNode.h"
 #include "DialogueGraphRerouteNode.h"
+#include "DialogueGraphSkipTextNode.h"
 #include "DialogueGraphSwitcherNode.h"
 #include "DialogueGraphTransitNode.h"
 
@@ -60,6 +61,12 @@ FDialogueGraphResolvedConnection DialogueGraphUtilities::ResolveConnection(const
 		if (const UDialogueGraphSwitcherNode* switcherNode = Cast<UDialogueGraphSwitcherNode>(linkedNode))
 		{
 			result.NextNodeId = switcherNode->GetSwitcherNodeId();
+			return result;
+		}
+
+		if (const UDialogueGraphSkipTextNode* skipTextNode = Cast<UDialogueGraphSkipTextNode>(linkedNode))
+		{
+			result.NextNodeId = skipTextNode->GetSkipTextNodeId();
 			return result;
 		}
 

@@ -52,8 +52,17 @@ struct FDialogueSwitcher;
 struct FDialogueTransit;
 // ********** End ScriptStruct FDialogueTransit ****************************************************
 
-// ********** Begin ScriptStruct FDialogueInit *****************************************************
+// ********** Begin ScriptStruct FDialogueSkipText *************************************************
 #define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_89_GENERATED_BODY \
+	friend struct Z_Construct_UScriptStruct_FDialogueSkipText_Statics; \
+	DIALOGUETOOL_API static class UScriptStruct* StaticStruct();
+
+
+struct FDialogueSkipText;
+// ********** End ScriptStruct FDialogueSkipText ***************************************************
+
+// ********** Begin ScriptStruct FDialogueInit *****************************************************
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_101_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FDialogueInit_Statics; \
 	DIALOGUETOOL_API static class UScriptStruct* StaticStruct();
 
@@ -62,7 +71,7 @@ struct FDialogueInit;
 // ********** End ScriptStruct FDialogueInit *******************************************************
 
 // ********** Begin ScriptStruct FDialogueResponse *************************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_107_GENERATED_BODY \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_119_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FDialogueResponse_Statics; \
 	DIALOGUETOOL_API static class UScriptStruct* StaticStruct();
 
@@ -71,7 +80,7 @@ struct FDialogueResponse;
 // ********** End ScriptStruct FDialogueResponse ***************************************************
 
 // ********** Begin ScriptStruct FDialogueNode *****************************************************
-#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_147_GENERATED_BODY \
+#define FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h_159_GENERATED_BODY \
 	friend struct Z_Construct_UScriptStruct_FDialogueNode_Statics; \
 	DIALOGUETOOL_API static class UScriptStruct* StaticStruct();
 

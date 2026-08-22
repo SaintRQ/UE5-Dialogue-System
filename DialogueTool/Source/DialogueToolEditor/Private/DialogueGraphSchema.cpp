@@ -7,6 +7,7 @@
 #include "DialogueGraphNode.h"
 #include "DialogueGraphRerouteNode.h"
 #include "DialogueGraphResponseProviderNode.h"
+#include "DialogueGraphSkipTextNode.h"
 #include "DialogueGraphSwitcherNode.h"
 #include "DialogueGraphTransitNode.h"
 #include "DialogueGraphUtilities.h"
@@ -197,6 +198,18 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 		transitAction->NodeTemplate = NewObject<UDialogueGraphTransitNode>();
 		contextMenuBuilder.AddAction(transitAction);
 	};
+	const auto addSkipTextAction = [&contextMenuBuilder]()
+	{
+		const TSharedRef<FEdGraphSchemaAction_NewNode> skipTextAction = MakeShared<FEdGraphSchemaAction_NewNode>(
+			FText::GetEmpty(),
+			LOCTEXT("AddSkipTextNode", "Add Skip Text"),
+			LOCTEXT(
+				"AddSkipTextNodeTooltip",
+				"Keeps the current text and immediately shows the next topic's responses."),
+			0);
+		skipTextAction->NodeTemplate = NewObject<UDialogueGraphSkipTextNode>();
+		contextMenuBuilder.AddAction(skipTextAction);
+	};
 
 	if (contextMenuBuilder.FromPin)
 	{
@@ -240,6 +253,7 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 			switcherAction->NodeTemplate = NewObject<UDialogueGraphSwitcherNode>();
 			contextMenuBuilder.AddAction(switcherAction);
 
+			addSkipTextAction();
 			addTransitAction();
 		}
 
@@ -292,6 +306,7 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 	switcherAction->NodeTemplate = NewObject<UDialogueGraphSwitcherNode>();
 	contextMenuBuilder.AddAction(switcherAction);
 
+	addSkipTextAction();
 	addTransitAction();
 	addResponseProviderAction();
 

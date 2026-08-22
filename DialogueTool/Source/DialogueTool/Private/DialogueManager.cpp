@@ -364,9 +364,9 @@ void UDialogueManager::CompleteCurrentTopic()
 	BeginActions(dialogueNode->Actions, dialogueNode->NextNode);
 }
 
-void UDialogueManager::AdvanceToNode(int64 nodeId)
+void UDialogueManager::AdvanceToNode(int64 nodeId, bool skipText)
 {
-	TSet<int64> visitedSwitchers;
+	TSet<int64> visitedFlowNodes;
 	while (ActiveDialogue)
 	{
 		if (nodeId == DialogueFinishNodeId)
@@ -386,7 +386,11 @@ void UDialogueManager::AdvanceToNode(int64 nodeId)
 			DialogueCache.TopicsMemory.Add(nodeId);
 			CurrentNodeId = nodeId;
 			CurrentTextIndex = 0;
-			if (dialogueNode->RootText.IsEmpty())
+			if (skipText && !dialogueNode->Response.IsEmpty())
+			{
+				PublishResponses(dialogueNode->Response);
+			}
+			else if (dialogueNode->RootText.IsEmpty())
 			{
 				CompleteCurrentTopic();
 			}
@@ -400,12 +404,12 @@ void UDialogueManager::AdvanceToNode(int64 nodeId)
 		const FDialogueSwitcher* switcher = ActiveDialogue->FindDialogueSwitcher(nodeId);
 		if (switcher)
 		{
-			if (visitedSwitchers.Contains(nodeId))
+			if (visitedFlowNodes.Contains(nodeId))
 			{
 				break;
 			}
 
-			visitedSwitchers.Add(nodeId);
+			visitedFlowNodes.Add(nodeId);
 			const FDialogueSwitcherCondition* selectedCondition = switcher->Conditions.FindByPredicate(
 				[this](const FDialogueSwitcherCondition& condition)
 				{
@@ -422,11 +426,34 @@ void UDialogueManager::AdvanceToNode(int64 nodeId)
 					return action != nullptr;
 				}))
 			{
-				BeginActions(selectedCondition->Actions, selectedCondition->NextNode);
+				BeginActions(selectedCondition->Actions, selectedCondition->NextNode, false, skipText);
 				return;
 			}
 
 			nodeId = selectedCondition->NextNode;
+			continue;
+		}
+
+		if (const FDialogueSkipText* skipTextData = ActiveDialogue->FindDialogueSkipText(nodeId))
+		{
+			if (visitedFlowNodes.Contains(nodeId))
+			{
+				break;
+			}
+
+			visitedFlowNodes.Add(nodeId);
+			if (skipTextData->Actions.ContainsByPredicate(
+				[](const TObjectPtr<UDialogueAction>& action)
+				{
+					return action != nullptr;
+				}))
+			{
+				BeginActions(skipTextData->Actions, skipTextData->NextNode, false, true);
+				return;
+			}
+
+			nodeId = skipTextData->NextNode;
+			skipText = true;
 			continue;
 		}
 
@@ -549,7 +576,8 @@ void UDialogueManager::PublishResponses(const TArray<FDialogueResponse>& respons
 void UDialogueManager::BeginActions(
 	const TArray<TObjectPtr<UDialogueAction>>& actions,
 	int64 nextNodeId,
-	bool finishAfterActions)
+	bool finishAfterActions,
+	bool skipTextAfterActions)
 {
 	PendingActions.Reset(actions.Num());
 	for (UDialogueAction* action : actions)
@@ -568,7 +596,7 @@ void UDialogueManager::BeginActions(
 		}
 		else
 		{
-			AdvanceToNode(nextNodeId);
+			AdvanceToNode(nextNodeId, skipTextAfterActions);
 		}
 		return;
 	}
@@ -576,6 +604,7 @@ void UDialogueManager::BeginActions(
 	PendingNextNodeId = nextNodeId;
 	PendingActionIndex = 0;
 	FinishAfterActions = finishAfterActions;
+	SkipTextAfterActions = skipTextAfterActions;
 	PlaybackState = EPlaybackState::ExecutingActions;
 	ActionTimerHandle = GetWorld()->GetTimerManager().SetTimerForNextTick(
 		this,
@@ -611,7 +640,7 @@ void UDialogueManager::ExecuteNextAction()
 	}
 	else
 	{
-		AdvanceToNode(PendingNextNodeId);
+		AdvanceToNode(PendingNextNodeId, SkipTextAfterActions);
 	}
 }
 
@@ -656,4 +685,5 @@ void UDialogueManager::ResetDialogueState()
 	RevealedCharacters = 0;
 	PendingActionIndex = 0;
 	FinishAfterActions = false;
+	SkipTextAfterActions = false;
 }

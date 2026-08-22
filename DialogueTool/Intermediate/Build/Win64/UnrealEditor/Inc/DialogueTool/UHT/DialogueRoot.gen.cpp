@@ -21,6 +21,7 @@ DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueCache();
 DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueInit();
 DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueNode();
 DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueResponse();
+DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueSkipText();
 DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueSwitcher();
 DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueSwitcherCondition();
 DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueTransit();
@@ -390,6 +391,77 @@ UScriptStruct* Z_Construct_UScriptStruct_FDialogueTransit()
 	return Z_Registration_Info_UScriptStruct_FDialogueTransit.InnerSingleton;
 }
 // ********** End ScriptStruct FDialogueTransit ****************************************************
+
+// ********** Begin ScriptStruct FDialogueSkipText *************************************************
+static FStructRegistrationInfo Z_Registration_Info_UScriptStruct_FDialogueSkipText;
+class UScriptStruct* FDialogueSkipText::StaticStruct()
+{
+	if (!Z_Registration_Info_UScriptStruct_FDialogueSkipText.OuterSingleton)
+	{
+		Z_Registration_Info_UScriptStruct_FDialogueSkipText.OuterSingleton = GetStaticStruct(Z_Construct_UScriptStruct_FDialogueSkipText, (UObject*)Z_Construct_UPackage__Script_DialogueTool(), TEXT("DialogueSkipText"));
+	}
+	return Z_Registration_Info_UScriptStruct_FDialogueSkipText.OuterSingleton;
+}
+struct Z_Construct_UScriptStruct_FDialogueSkipText_Statics
+{
+#if WITH_METADATA
+	static constexpr UECodeGen_Private::FMetaDataPairParam Struct_MetaDataParams[] = {
+		{ "BlueprintType", "true" },
+		{ "ModuleRelativePath", "Public/DialogueRoot.h" },
+	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_Actions_Inner_MetaData[] = {
+		{ "EditInline", "true" },
+		{ "ModuleRelativePath", "Public/DialogueRoot.h" },
+	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_Actions_MetaData[] = {
+		{ "EditInline", "true" },
+		{ "ModuleRelativePath", "Public/DialogueRoot.h" },
+	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_NextNode_MetaData[] = {
+		{ "ModuleRelativePath", "Public/DialogueRoot.h" },
+	};
+#endif // WITH_METADATA
+	static const UECodeGen_Private::FObjectPropertyParams NewProp_Actions_Inner;
+	static const UECodeGen_Private::FArrayPropertyParams NewProp_Actions;
+	static const UECodeGen_Private::FInt64PropertyParams NewProp_NextNode;
+	static const UECodeGen_Private::FPropertyParamsBase* const PropPointers[];
+	static void* NewStructOps()
+	{
+		return (UScriptStruct::ICppStructOps*)new UScriptStruct::TCppStructOps<FDialogueSkipText>();
+	}
+	static const UECodeGen_Private::FStructParams StructParams;
+};
+const UECodeGen_Private::FObjectPropertyParams Z_Construct_UScriptStruct_FDialogueSkipText_Statics::NewProp_Actions_Inner = { "Actions", nullptr, (EPropertyFlags)0x0106000000080008, UECodeGen_Private::EPropertyGenFlags::Object | UECodeGen_Private::EPropertyGenFlags::ObjectPtr, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 0, Z_Construct_UClass_UDialogueAction_NoRegister, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_Actions_Inner_MetaData), NewProp_Actions_Inner_MetaData) };
+const UECodeGen_Private::FArrayPropertyParams Z_Construct_UScriptStruct_FDialogueSkipText_Statics::NewProp_Actions = { "Actions", nullptr, (EPropertyFlags)0x0114008000000008, UECodeGen_Private::EPropertyGenFlags::Array, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(FDialogueSkipText, Actions), EArrayPropertyFlags::None, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_Actions_MetaData), NewProp_Actions_MetaData) };
+const UECodeGen_Private::FInt64PropertyParams Z_Construct_UScriptStruct_FDialogueSkipText_Statics::NewProp_NextNode = { "NextNode", nullptr, (EPropertyFlags)0x0010000000000000, UECodeGen_Private::EPropertyGenFlags::Int64, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(FDialogueSkipText, NextNode), METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_NextNode_MetaData), NewProp_NextNode_MetaData) };
+const UECodeGen_Private::FPropertyParamsBase* const Z_Construct_UScriptStruct_FDialogueSkipText_Statics::PropPointers[] = {
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueSkipText_Statics::NewProp_Actions_Inner,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueSkipText_Statics::NewProp_Actions,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueSkipText_Statics::NewProp_NextNode,
+};
+static_assert(UE_ARRAY_COUNT(Z_Construct_UScriptStruct_FDialogueSkipText_Statics::PropPointers) < 2048);
+const UECodeGen_Private::FStructParams Z_Construct_UScriptStruct_FDialogueSkipText_Statics::StructParams = {
+	(UObject* (*)())Z_Construct_UPackage__Script_DialogueTool,
+	nullptr,
+	&NewStructOps,
+	"DialogueSkipText",
+	Z_Construct_UScriptStruct_FDialogueSkipText_Statics::PropPointers,
+	UE_ARRAY_COUNT(Z_Construct_UScriptStruct_FDialogueSkipText_Statics::PropPointers),
+	sizeof(FDialogueSkipText),
+	alignof(FDialogueSkipText),
+	RF_Public|RF_Transient|RF_MarkAsNative,
+	EStructFlags(0x00000005),
+	METADATA_PARAMS(UE_ARRAY_COUNT(Z_Construct_UScriptStruct_FDialogueSkipText_Statics::Struct_MetaDataParams), Z_Construct_UScriptStruct_FDialogueSkipText_Statics::Struct_MetaDataParams)
+};
+UScriptStruct* Z_Construct_UScriptStruct_FDialogueSkipText()
+{
+	if (!Z_Registration_Info_UScriptStruct_FDialogueSkipText.InnerSingleton)
+	{
+		UECodeGen_Private::ConstructUScriptStruct(Z_Registration_Info_UScriptStruct_FDialogueSkipText.InnerSingleton, Z_Construct_UScriptStruct_FDialogueSkipText_Statics::StructParams);
+	}
+	return Z_Registration_Info_UScriptStruct_FDialogueSkipText.InnerSingleton;
+}
+// ********** End ScriptStruct FDialogueSkipText ***************************************************
 
 // ********** Begin ScriptStruct FDialogueInit *****************************************************
 static FStructRegistrationInfo Z_Registration_Info_UScriptStruct_FDialogueInit;
@@ -770,12 +842,13 @@ struct Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Sour
 		{ FDialogueSwitcherCondition::StaticStruct, Z_Construct_UScriptStruct_FDialogueSwitcherCondition_Statics::NewStructOps, TEXT("DialogueSwitcherCondition"), &Z_Registration_Info_UScriptStruct_FDialogueSwitcherCondition, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueSwitcherCondition), 2143429039U) },
 		{ FDialogueSwitcher::StaticStruct, Z_Construct_UScriptStruct_FDialogueSwitcher_Statics::NewStructOps, TEXT("DialogueSwitcher"), &Z_Registration_Info_UScriptStruct_FDialogueSwitcher, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueSwitcher), 26010884U) },
 		{ FDialogueTransit::StaticStruct, Z_Construct_UScriptStruct_FDialogueTransit_Statics::NewStructOps, TEXT("DialogueTransit"), &Z_Registration_Info_UScriptStruct_FDialogueTransit, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueTransit), 2804408187U) },
+		{ FDialogueSkipText::StaticStruct, Z_Construct_UScriptStruct_FDialogueSkipText_Statics::NewStructOps, TEXT("DialogueSkipText"), &Z_Registration_Info_UScriptStruct_FDialogueSkipText, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueSkipText), 348299129U) },
 		{ FDialogueInit::StaticStruct, Z_Construct_UScriptStruct_FDialogueInit_Statics::NewStructOps, TEXT("DialogueInit"), &Z_Registration_Info_UScriptStruct_FDialogueInit, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueInit), 321906102U) },
 		{ FDialogueResponse::StaticStruct, Z_Construct_UScriptStruct_FDialogueResponse_Statics::NewStructOps, TEXT("DialogueResponse"), &Z_Registration_Info_UScriptStruct_FDialogueResponse, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueResponse), 2606682219U) },
 		{ FDialogueNode::StaticStruct, Z_Construct_UScriptStruct_FDialogueNode_Statics::NewStructOps, TEXT("DialogueNode"), &Z_Registration_Info_UScriptStruct_FDialogueNode, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueNode), 633395235U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_1026569182(TEXT("/Script/DialogueTool"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_3495931345(TEXT("/Script/DialogueTool"),
 	nullptr, 0,
 	Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_Statics::ScriptStructInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_Statics::ScriptStructInfo),
 	Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_Statics::EnumInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_Statics::EnumInfo));

@@ -59,6 +59,18 @@ public:
 	// Removes dialogue library transit data by identifier.
 	void RemoveDialogueTransit(int64 transitId);
 
+	// Adds a skip-text transition with the specified identifier.
+	FDialogueSkipText& AddDialogueSkipText(int64 skipTextId);
+
+	// Finds mutable skip-text transition data by identifier.
+	FDialogueSkipText* FindDialogueSkipText(int64 skipTextId);
+
+	// Finds skip-text transition data by identifier.
+	const FDialogueSkipText* FindDialogueSkipText(int64 skipTextId) const;
+
+	// Removes skip-text transition data by identifier.
+	void RemoveDialogueSkipText(int64 skipTextId);
+
 	// Returns mutable dialogue initialization data.
 	TArray<FDialogueInit>& GetDialogueInitData();
 
@@ -89,6 +101,9 @@ private:
 
 	UPROPERTY()
 	TMap<int64, FDialogueTransit> DialogueTransits;
+
+	UPROPERTY()
+	TMap<int64, FDialogueSkipText> DialogueSkipTexts;
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY()

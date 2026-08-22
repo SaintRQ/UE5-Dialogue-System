@@ -124,8 +124,8 @@ private:
 	// Processes responses or the default transition after the current topic.
 	void CompleteCurrentTopic();
 
-	// Resolves switchers and enters the next topic.
-	void AdvanceToNode(int64 nodeId);
+	// Resolves flow nodes and enters the next topic.
+	void AdvanceToNode(int64 nodeId, bool skipText = false);
 
 	// Enters a dialogue library and stores the caller continuation.
 	bool EnterDialogueLibrary(const FDialogueTransit& transit);
@@ -140,7 +140,8 @@ private:
 	void BeginActions(
 		const TArray<TObjectPtr<UDialogueAction>>& actions,
 		int64 nextNodeId,
-		bool finishAfterActions = false);
+		bool finishAfterActions = false,
+		bool skipTextAfterActions = false);
 
 	// Executes one queued action and schedules the following action.
 	void ExecuteNextAction();
@@ -189,4 +190,5 @@ private:
 	int32 RevealedCharacters = 0;
 	int32 PendingActionIndex = 0;
 	bool FinishAfterActions = false;
+	bool SkipTextAfterActions = false;
 };

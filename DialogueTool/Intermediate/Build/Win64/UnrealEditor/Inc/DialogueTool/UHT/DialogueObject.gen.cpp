@@ -18,6 +18,7 @@ DIALOGUETOOL_API UClass* Z_Construct_UClass_UDialogueObject();
 DIALOGUETOOL_API UClass* Z_Construct_UClass_UDialogueObject_NoRegister();
 DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueInit();
 DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueNode();
+DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueSkipText();
 DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueSwitcher();
 DIALOGUETOOL_API UScriptStruct* Z_Construct_UScriptStruct_FDialogueTransit();
 ENGINE_API UClass* Z_Construct_UClass_UEdGraph_NoRegister();
@@ -86,6 +87,9 @@ struct Z_Construct_UClass_UDialogueObject_Statics
 	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_DialogueTransits_MetaData[] = {
 		{ "ModuleRelativePath", "Public/DialogueObject.h" },
 	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_DialogueSkipTexts_MetaData[] = {
+		{ "ModuleRelativePath", "Public/DialogueObject.h" },
+	};
 #if WITH_EDITORONLY_DATA
 	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_EditorGraph_MetaData[] = {
 		{ "ModuleRelativePath", "Public/DialogueObject.h" },
@@ -104,6 +108,9 @@ struct Z_Construct_UClass_UDialogueObject_Statics
 	static const UECodeGen_Private::FStructPropertyParams NewProp_DialogueTransits_ValueProp;
 	static const UECodeGen_Private::FInt64PropertyParams NewProp_DialogueTransits_Key_KeyProp;
 	static const UECodeGen_Private::FMapPropertyParams NewProp_DialogueTransits;
+	static const UECodeGen_Private::FStructPropertyParams NewProp_DialogueSkipTexts_ValueProp;
+	static const UECodeGen_Private::FInt64PropertyParams NewProp_DialogueSkipTexts_Key_KeyProp;
+	static const UECodeGen_Private::FMapPropertyParams NewProp_DialogueSkipTexts;
 #if WITH_EDITORONLY_DATA
 	static const UECodeGen_Private::FObjectPropertyParams NewProp_EditorGraph;
 #endif // WITH_EDITORONLY_DATA
@@ -126,6 +133,9 @@ const UECodeGen_Private::FMapPropertyParams Z_Construct_UClass_UDialogueObject_S
 const UECodeGen_Private::FStructPropertyParams Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueTransits_ValueProp = { "DialogueTransits", nullptr, (EPropertyFlags)0x0000008000000000, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 1, Z_Construct_UScriptStruct_FDialogueTransit, METADATA_PARAMS(0, nullptr) }; // 2804408187
 const UECodeGen_Private::FInt64PropertyParams Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueTransits_Key_KeyProp = { "DialogueTransits_Key", nullptr, (EPropertyFlags)0x0000008000000000, UECodeGen_Private::EPropertyGenFlags::Int64, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 0, METADATA_PARAMS(0, nullptr) };
 const UECodeGen_Private::FMapPropertyParams Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueTransits = { "DialogueTransits", nullptr, (EPropertyFlags)0x0040008000000000, UECodeGen_Private::EPropertyGenFlags::Map, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueObject, DialogueTransits), EMapPropertyFlags::None, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_DialogueTransits_MetaData), NewProp_DialogueTransits_MetaData) }; // 2804408187
+const UECodeGen_Private::FStructPropertyParams Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueSkipTexts_ValueProp = { "DialogueSkipTexts", nullptr, (EPropertyFlags)0x0000008000000000, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 1, Z_Construct_UScriptStruct_FDialogueSkipText, METADATA_PARAMS(0, nullptr) }; // 348299129
+const UECodeGen_Private::FInt64PropertyParams Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueSkipTexts_Key_KeyProp = { "DialogueSkipTexts_Key", nullptr, (EPropertyFlags)0x0000008000000000, UECodeGen_Private::EPropertyGenFlags::Int64, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 0, METADATA_PARAMS(0, nullptr) };
+const UECodeGen_Private::FMapPropertyParams Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueSkipTexts = { "DialogueSkipTexts", nullptr, (EPropertyFlags)0x0040008000000000, UECodeGen_Private::EPropertyGenFlags::Map, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueObject, DialogueSkipTexts), EMapPropertyFlags::None, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_DialogueSkipTexts_MetaData), NewProp_DialogueSkipTexts_MetaData) }; // 348299129
 #if WITH_EDITORONLY_DATA
 const UECodeGen_Private::FObjectPropertyParams Z_Construct_UClass_UDialogueObject_Statics::NewProp_EditorGraph = { "EditorGraph", nullptr, (EPropertyFlags)0x0144000800000000, UECodeGen_Private::EPropertyGenFlags::Object | UECodeGen_Private::EPropertyGenFlags::ObjectPtr, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueObject, EditorGraph), Z_Construct_UClass_UEdGraph_NoRegister, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_EditorGraph_MetaData), NewProp_EditorGraph_MetaData) };
 #endif // WITH_EDITORONLY_DATA
@@ -142,6 +152,9 @@ const UECodeGen_Private::FPropertyParamsBase* const Z_Construct_UClass_UDialogue
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueTransits_ValueProp,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueTransits_Key_KeyProp,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueTransits,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueSkipTexts_ValueProp,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueSkipTexts_Key_KeyProp,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueObject_Statics::NewProp_DialogueSkipTexts,
 #if WITH_EDITORONLY_DATA
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UClass_UDialogueObject_Statics::NewProp_EditorGraph,
 #endif // WITH_EDITORONLY_DATA
@@ -184,10 +197,10 @@ UDialogueObject::~UDialogueObject() {}
 struct Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueObject_h__Script_DialogueTool_Statics
 {
 	static constexpr FClassRegisterCompiledInInfo ClassInfo[] = {
-		{ Z_Construct_UClass_UDialogueObject, UDialogueObject::StaticClass, TEXT("UDialogueObject"), &Z_Registration_Info_UClass_UDialogueObject, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UDialogueObject), 2431994034U) },
+		{ Z_Construct_UClass_UDialogueObject, UDialogueObject::StaticClass, TEXT("UDialogueObject"), &Z_Registration_Info_UClass_UDialogueObject, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UDialogueObject), 2894898021U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueObject_h__Script_DialogueTool_76639482(TEXT("/Script/DialogueTool"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueObject_h__Script_DialogueTool_2608862794(TEXT("/Script/DialogueTool"),
 	Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueObject_h__Script_DialogueTool_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueObject_h__Script_DialogueTool_Statics::ClassInfo),
 	nullptr, 0,
 	nullptr, 0);

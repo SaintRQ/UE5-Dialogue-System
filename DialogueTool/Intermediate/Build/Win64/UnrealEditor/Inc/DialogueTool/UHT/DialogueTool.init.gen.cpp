@@ -27,13 +27,13 @@ void EmptyLinkFunctionForGeneratedCodeDialogueTool_init() {}
 				SingletonFuncArray,
 				UE_ARRAY_COUNT(SingletonFuncArray),
 				PKG_CompiledIn | 0x00000000,
-				0x021E6336,
-				0xB452F26E,
+				0x8C1F105F,
+				0x96C96DAB,
 				METADATA_PARAMS(0, nullptr)
 			};
 			UECodeGen_Private::ConstructUPackage(Z_Registration_Info_UPackage__Script_DialogueTool.OuterSingleton, PackageParams);
 		}
 		return Z_Registration_Info_UPackage__Script_DialogueTool.OuterSingleton;
 	}
-	static FRegisterCompiledInInfo Z_CompiledInDeferPackage_UPackage__Script_DialogueTool(Z_Construct_UPackage__Script_DialogueTool, TEXT("/Script/DialogueTool"), Z_Registration_Info_UPackage__Script_DialogueTool, CONSTRUCT_RELOAD_VERSION_INFO(FPackageReloadVersionInfo, 0x021E6336, 0xB452F26E));
+	static FRegisterCompiledInInfo Z_CompiledInDeferPackage_UPackage__Script_DialogueTool(Z_Construct_UPackage__Script_DialogueTool, TEXT("/Script/DialogueTool"), Z_Registration_Info_UPackage__Script_DialogueTool, CONSTRUCT_RELOAD_VERSION_INFO(FPackageReloadVersionInfo, 0x8C1F105F, 0x96C96DAB));
 PRAGMA_ENABLE_DEPRECATION_WARNINGS

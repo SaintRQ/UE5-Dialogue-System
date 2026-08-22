@@ -5,6 +5,7 @@
 #include "DialogueGraphActionNode.h"
 #include "DialogueGraphInitNode.h"
 #include "DialogueGraphNode.h"
+#include "DialogueGraphSkipTextNode.h"
 #include "DialogueGraphSwitcherNode.h"
 #include "DialogueGraphTransitNode.h"
 
@@ -123,6 +124,10 @@ void UDialogueGraphRerouteNode::RefreshUpstreamDialogueNodes(
 			else if (UDialogueGraphTransitNode* transitNode = Cast<UDialogueGraphTransitNode>(sourcePin->GetOwningNode()))
 			{
 				transitNode->PinConnectionListChanged(sourcePin);
+			}
+			else if (UDialogueGraphSkipTextNode* skipTextNode = Cast<UDialogueGraphSkipTextNode>(sourcePin->GetOwningNode()))
+			{
+				skipTextNode->PinConnectionListChanged(sourcePin);
 			}
 			else
 			{

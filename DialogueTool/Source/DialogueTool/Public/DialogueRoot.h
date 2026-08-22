@@ -84,6 +84,18 @@ struct FDialogueTransit
 };
 
 USTRUCT(BlueprintType)
+struct FDialogueSkipText
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY(Instanced)
+	TArray<TObjectPtr<UDialogueAction>> Actions;
+
+	UPROPERTY()
+	int64 NextNode = -1;
+};
+
+USTRUCT(BlueprintType)
 struct FDialogueInit
 {
 	GENERATED_USTRUCT_BODY()
