@@ -317,7 +317,8 @@ void UDialogueManager::CompleteCurrentTextReveal()
 		: nullptr;
 	if (dialogueNode
 		&& CurrentTextIndex == dialogueNode->RootText.Num() - 1
-		&& !dialogueNode->Response.IsEmpty())
+		&& (!dialogueNode->Response.IsEmpty()
+			|| ActiveDialogue->FindDialogueSkipText(dialogueNode->NextNode)))
 	{
 		CompleteCurrentTopic();
 		return;
