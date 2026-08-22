@@ -10,10 +10,10 @@
 #include "DialogueToolSettings.h"
 #include "EdGraph/EdGraph.h"
 #include "Framework/Application/SlateApplication.h"
-#include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "PropertyCustomizationHelpers.h"
 #include "SDialogueAddButton.h"
 #include "SDialogueConditionPopup.h"
+#include "SDialogueCustomTextPopup.h"
 #include "SDialogueGraphInitStatus.h"
 #include "SDialogueRichTextEditor.h"
 #include "SGraphPanel.h"
@@ -115,18 +115,46 @@ void SDialogueGraphNode::UpdateGraphNode()
 	{
 		for (int32 textIndex = 0; textIndex < dialogueData->RootText.Num(); ++textIndex)
 		{
+			const FName customTextId = dialogueData->RootTextCustomIds.IsValidIndex(textIndex)
+				? dialogueData->RootTextCustomIds[textIndex]
+				: NAME_None;
+			const bool bCustomText = !customTextId.IsNone();
 			UEdGraphPin* providerPin = dialogueNode->GetRootTextProviderInputPin(textIndex);
 			const UDialogueGraphResponseProviderNode* providerNode = providerPin && !providerPin->LinkedTo.IsEmpty()
 				? Cast<UDialogueGraphResponseProviderNode>(providerPin->LinkedTo[0]->GetOwningNode())
 				: nullptr;
-			const bool bProviderText = providerNode != nullptr;
+			const bool bProviderText = !bCustomText && providerNode != nullptr;
 			bHasProvider |= bProviderText;
 			TSharedRef<SWidget> textEditor = SNew(SDialogueRichTextEditor)
 				.Text(dialogueData->RootText[textIndex])
 				.HintText(LOCTEXT("RootTextHint", "Dialogue text"))
 				.AutoWrapText(true)
 				.OnTextCommitted(this, &SDialogueGraphNode::OnRootTextCommitted, textIndex);
-			if (bProviderText)
+			if (bCustomText)
+			{
+				textEditor = SNew(SBorder)
+					.BorderImage(FAppStyle::GetBrush("Graph.Node.ColorSpill"))
+					.BorderBackgroundColor(FLinearColor(0.018f, 0.28f, 0.1f))
+					.Padding(6.0f, 4.0f)
+					.VAlign(VAlign_Center)
+					[
+						SNew(STextBlock)
+						.Text_Lambda([customTextId]()
+						{
+							const FText* customText = GetDefault<UDialogueToolSettings>()
+								->TopicCustomTextList.Find(customTextId);
+							return customText
+								? *customText
+								: FText::Format(
+									LOCTEXT("MissingCustomTopicText", "Missing custom text: {0}"),
+									FText::FromName(customTextId));
+						})
+						.Font(FCoreStyle::GetDefaultFontStyle("Bold", 9))
+						.ColorAndOpacity(FLinearColor(0.42f, 1.0f, 0.6f))
+						.AutoWrapText(true)
+					];
+			}
+			else if (bProviderText)
 			{
 				const UClass* providerClass = providerNode->GetResponseProviderClass();
 				const FText providerText = providerClass
@@ -204,18 +232,21 @@ void SDialogueGraphNode::UpdateGraphNode()
 				]
 			];
 
-			// Provider outline
 			TSharedRef<SWidget> textRowWidget = textRow;
-			if (bProviderText)
+			if (bCustomText || bProviderText)
 			{
 				textRowWidget = SNew(SBorder)
 					.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-					.BorderBackgroundColor(FLinearColor(0.04f, 0.48f, 0.78f))
+					.BorderBackgroundColor(bCustomText
+						? FLinearColor(0.04f, 0.7f, 0.24f)
+						: FLinearColor(0.04f, 0.48f, 0.78f))
 					.Padding(2.0f)
 					[
 						SNew(SBorder)
 						.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
-						.BorderBackgroundColor(FLinearColor(0.008f, 0.025f, 0.055f))
+						.BorderBackgroundColor(bCustomText
+							? FLinearColor(0.006f, 0.04f, 0.018f)
+							: FLinearColor(0.008f, 0.025f, 0.055f))
 						.Padding(6.0f, 3.0f)
 						[
 							textRow
@@ -232,14 +263,31 @@ void SDialogueGraphNode::UpdateGraphNode()
 		}
 	}
 
+	TSharedRef<SHorizontalBox> addTextButtons = SNew(SHorizontalBox);
+	addTextButtons->AddSlot()
+	.AutoWidth()
+	.Padding(2.0f)
+	[
+		SNew(SDialogueAddButton)
+		.Color(FLinearColor(0.06f, 0.38f, 0.92f, 0.5f))
+		.OnClicked(this, &SDialogueGraphNode::OnAddRootText)
+	];
+	addTextButtons->AddSlot()
+	.AutoWidth()
+	.Padding(2.0f)
+	[
+		SNew(SDialogueAddButton)
+		.Color(FLinearColor(0.04f, 0.7f, 0.24f, 0.5f))
+		.Text(LOCTEXT("AddCustomTopicText", "Add Custom"))
+		.OnClicked(this, &SDialogueGraphNode::OnOpenCustomTextMenu, false)
+	];
+
 	textContent->AddSlot()
 	.AutoHeight()
 	.HAlign(HAlign_Center)
 	.Padding(2.0f, 4.0f, 2.0f, 2.0f)
 	[
-		SNew(SDialogueAddButton)
-		.Color(FLinearColor(0.06f, 0.62f, 0.22f, 0.5f))
-		.OnClicked(this, &SDialogueGraphNode::OnAddRootText)
+		addTextButtons
 	];
 
 	content->AddSlot(0, 1)
@@ -529,7 +577,7 @@ void SDialogueGraphNode::UpdateGraphNode()
 		SNew(SDialogueAddButton)
 	    .Color(FLinearColor(0.04f, 0.7f, 0.24f, 0.5))
 		.Text(LOCTEXT("AddCustom", "Add Custom"))
-		.OnClicked(this, &SDialogueGraphNode::OnOpenCustomResponseMenu)
+		.OnClicked(this, &SDialogueGraphNode::OnOpenCustomTextMenu, true)
 	];
 	if (!bHasFinishResponse)
 	{
@@ -759,59 +807,34 @@ FReply SDialogueGraphNode::OnAddResponse()
 	return FReply::Handled();
 }
 
-FReply SDialogueGraphNode::OnOpenCustomResponseMenu()
+FReply SDialogueGraphNode::OnOpenCustomTextMenu(bool response)
 {
-	const UDialogueToolSettings* settings = GetDefault<UDialogueToolSettings>();
-	TArray<FName> customTextIds;
-	settings->ResponseCustomTextList.GenerateKeyArray(customTextIds);
-	customTextIds.Sort([](const FName& left, const FName& right)
-	{
-		return left.LexicalLess(right);
-	});
-
-	FMenuBuilder menuBuilder(true, nullptr);
-	if (customTextIds.IsEmpty())
-	{
-		menuBuilder.AddMenuEntry(
-			LOCTEXT("NoCustomText", "No custom text configured"),
-			FText::GetEmpty(),
-			FSlateIcon(),
-			FUIAction(
-				FExecuteAction(),
-				FCanExecuteAction::CreateLambda([]()
-				{
-					return false;
-				})));
-	}
-	else
-	{
-		for (const FName customTextId : customTextIds)
-		{
-			menuBuilder.AddMenuEntry(
-				FText::FromName(customTextId),
-				settings->ResponseCustomTextList.FindChecked(customTextId),
-				FSlateIcon(),
-				FUIAction(FExecuteAction::CreateSP(
-					this,
-					&SDialogueGraphNode::OnAddCustomResponse,
-					customTextId)));
-		}
-	}
-
 	FSlateApplication::Get().PushMenu(
 		AsShared(),
 		FWidgetPath(),
-		menuBuilder.MakeWidget(),
+		SNew(SDialogueCustomTextPopup)
+		.Response(response)
+		.OnSelected(FOnDialogueCustomTextSelected::CreateSP(
+			this,
+			&SDialogueGraphNode::OnAddCustomText,
+			response)),
 		FSlateApplication::Get().GetCursorPos(),
 		FPopupTransitionEffect(FPopupTransitionEffect::ContextMenu));
 	return FReply::Handled();
 }
 
-void SDialogueGraphNode::OnAddCustomResponse(FName customTextId)
+void SDialogueGraphNode::OnAddCustomText(FName customTextId, bool response)
 {
 	if (UDialogueGraphNode* dialogueNode = GetDialogueNode())
 	{
-		dialogueNode->AddResponse(customTextId);
+		if (response)
+		{
+			dialogueNode->AddResponse(customTextId);
+		}
+		else
+		{
+			dialogueNode->AddRootText(customTextId);
+		}
 		UpdateGraphNode();
 	}
 }

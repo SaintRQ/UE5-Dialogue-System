@@ -731,6 +731,9 @@ struct Z_Construct_UScriptStruct_FDialogueNode_Statics
 	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_RootText_MetaData[] = {
 		{ "ModuleRelativePath", "Public/DialogueRoot.h" },
 	};
+	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_RootTextCustomIds_MetaData[] = {
+		{ "ModuleRelativePath", "Public/DialogueRoot.h" },
+	};
 	static constexpr UECodeGen_Private::FMetaDataPairParam NewProp_RootTextProviders_Inner_MetaData[] = {
 		{ "EditInline", "true" },
 		{ "ModuleRelativePath", "Public/DialogueRoot.h" },
@@ -761,6 +764,8 @@ struct Z_Construct_UScriptStruct_FDialogueNode_Statics
 	static const UECodeGen_Private::FBoolPropertyParams NewProp_IsRoot;
 	static const UECodeGen_Private::FTextPropertyParams NewProp_RootText_Inner;
 	static const UECodeGen_Private::FArrayPropertyParams NewProp_RootText;
+	static const UECodeGen_Private::FNamePropertyParams NewProp_RootTextCustomIds_Inner;
+	static const UECodeGen_Private::FArrayPropertyParams NewProp_RootTextCustomIds;
 	static const UECodeGen_Private::FObjectPropertyParams NewProp_RootTextProviders_Inner;
 	static const UECodeGen_Private::FArrayPropertyParams NewProp_RootTextProviders;
 	static const UECodeGen_Private::FSoftObjectPropertyParams NewProp_RootSounds_Inner;
@@ -784,6 +789,8 @@ void Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_IsRoot_SetBit(void
 const UECodeGen_Private::FBoolPropertyParams Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_IsRoot = { "IsRoot", nullptr, (EPropertyFlags)0x0010000000000000, UECodeGen_Private::EPropertyGenFlags::Bool | UECodeGen_Private::EPropertyGenFlags::NativeBool, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, sizeof(bool), sizeof(FDialogueNode), &Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_IsRoot_SetBit, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_IsRoot_MetaData), NewProp_IsRoot_MetaData) };
 const UECodeGen_Private::FTextPropertyParams Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootText_Inner = { "RootText", nullptr, (EPropertyFlags)0x0000000000000000, UECodeGen_Private::EPropertyGenFlags::Text, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 0, METADATA_PARAMS(0, nullptr) };
 const UECodeGen_Private::FArrayPropertyParams Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootText = { "RootText", nullptr, (EPropertyFlags)0x0010000000000000, UECodeGen_Private::EPropertyGenFlags::Array, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(FDialogueNode, RootText), EArrayPropertyFlags::None, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_RootText_MetaData), NewProp_RootText_MetaData) };
+const UECodeGen_Private::FNamePropertyParams Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootTextCustomIds_Inner = { "RootTextCustomIds", nullptr, (EPropertyFlags)0x0000000000000000, UECodeGen_Private::EPropertyGenFlags::Name, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 0, METADATA_PARAMS(0, nullptr) };
+const UECodeGen_Private::FArrayPropertyParams Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootTextCustomIds = { "RootTextCustomIds", nullptr, (EPropertyFlags)0x0010000000000000, UECodeGen_Private::EPropertyGenFlags::Array, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(FDialogueNode, RootTextCustomIds), EArrayPropertyFlags::None, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_RootTextCustomIds_MetaData), NewProp_RootTextCustomIds_MetaData) };
 const UECodeGen_Private::FObjectPropertyParams Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootTextProviders_Inner = { "RootTextProviders", nullptr, (EPropertyFlags)0x0106000000080008, UECodeGen_Private::EPropertyGenFlags::Object | UECodeGen_Private::EPropertyGenFlags::ObjectPtr, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 0, Z_Construct_UClass_UDialogueProvider_NoRegister, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_RootTextProviders_Inner_MetaData), NewProp_RootTextProviders_Inner_MetaData) };
 const UECodeGen_Private::FArrayPropertyParams Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootTextProviders = { "RootTextProviders", nullptr, (EPropertyFlags)0x0114008000000008, UECodeGen_Private::EPropertyGenFlags::Array, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(FDialogueNode, RootTextProviders), EArrayPropertyFlags::None, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_RootTextProviders_MetaData), NewProp_RootTextProviders_MetaData) };
 const UECodeGen_Private::FSoftObjectPropertyParams Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootSounds_Inner = { "RootSounds", nullptr, (EPropertyFlags)0x0004000000000000, UECodeGen_Private::EPropertyGenFlags::SoftObject, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, 0, Z_Construct_UClass_USoundBase_NoRegister, METADATA_PARAMS(0, nullptr) };
@@ -797,6 +804,8 @@ const UECodeGen_Private::FPropertyParamsBase* const Z_Construct_UScriptStruct_FD
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_IsRoot,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootText_Inner,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootText,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootTextCustomIds_Inner,
+	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootTextCustomIds,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootTextProviders_Inner,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootTextProviders,
 	(const UECodeGen_Private::FPropertyParamsBase*)&Z_Construct_UScriptStruct_FDialogueNode_Statics::NewProp_RootSounds_Inner,
@@ -845,10 +854,10 @@ struct Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Sour
 		{ FDialogueSkipText::StaticStruct, Z_Construct_UScriptStruct_FDialogueSkipText_Statics::NewStructOps, TEXT("DialogueSkipText"), &Z_Registration_Info_UScriptStruct_FDialogueSkipText, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueSkipText), 348299129U) },
 		{ FDialogueInit::StaticStruct, Z_Construct_UScriptStruct_FDialogueInit_Statics::NewStructOps, TEXT("DialogueInit"), &Z_Registration_Info_UScriptStruct_FDialogueInit, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueInit), 321906102U) },
 		{ FDialogueResponse::StaticStruct, Z_Construct_UScriptStruct_FDialogueResponse_Statics::NewStructOps, TEXT("DialogueResponse"), &Z_Registration_Info_UScriptStruct_FDialogueResponse, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueResponse), 2606682219U) },
-		{ FDialogueNode::StaticStruct, Z_Construct_UScriptStruct_FDialogueNode_Statics::NewStructOps, TEXT("DialogueNode"), &Z_Registration_Info_UScriptStruct_FDialogueNode, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueNode), 633395235U) },
+		{ FDialogueNode::StaticStruct, Z_Construct_UScriptStruct_FDialogueNode_Statics::NewStructOps, TEXT("DialogueNode"), &Z_Registration_Info_UScriptStruct_FDialogueNode, CONSTRUCT_RELOAD_VERSION_INFO(FStructReloadVersionInfo, sizeof(FDialogueNode), 1579195436U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_3495931345(TEXT("/Script/DialogueTool"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_1953201035(TEXT("/Script/DialogueTool"),
 	nullptr, 0,
 	Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_Statics::ScriptStructInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_Statics::ScriptStructInfo),
 	Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_Statics::EnumInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueTool_Public_DialogueRoot_h__Script_DialogueTool_Statics::EnumInfo));

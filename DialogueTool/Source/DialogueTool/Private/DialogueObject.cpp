@@ -27,9 +27,15 @@ void UDialogueObject::PostLoad()
 		}
 		node.RootSounds.SetNum(node.RootText.Num());
 		node.RootTextProviders.SetNum(node.RootText.Num());
+		node.RootTextCustomIds.SetNum(node.RootText.Num());
 		for (int32 textIndex = 0; textIndex < node.RootText.Num(); ++textIndex)
 		{
-			if (node.RootTextProviders[textIndex])
+			if (!node.RootTextCustomIds[textIndex].IsNone())
+			{
+				node.RootTextProviders[textIndex] = nullptr;
+				node.RootText[textIndex] = FText::GetEmpty();
+			}
+			else if (node.RootTextProviders[textIndex])
 			{
 				node.RootText[textIndex] = FText::GetEmpty();
 			}
@@ -132,6 +138,7 @@ FDialogueNode& UDialogueObject::AddDialogueNode(int64 nodeId)
 	}
 	dialogueNode.RootSounds.SetNum(dialogueNode.RootText.Num());
 	dialogueNode.RootTextProviders.SetNum(dialogueNode.RootText.Num());
+	dialogueNode.RootTextCustomIds.SetNum(dialogueNode.RootText.Num());
 	return dialogueNode;
 }
 

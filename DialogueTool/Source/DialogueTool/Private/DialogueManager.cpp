@@ -183,10 +183,23 @@ void UDialogueManager::StartCurrentText()
 		return;
 	}
 
-	CurrentSourceText = dialogueNode->RootTextProviders.IsValidIndex(CurrentTextIndex)
-		&& dialogueNode->RootTextProviders[CurrentTextIndex]
-		? ResolveProviderText(dialogueNode->RootTextProviders[CurrentTextIndex])
-		: dialogueNode->RootText[CurrentTextIndex];
+	const FName customTextId = dialogueNode->RootTextCustomIds.IsValidIndex(CurrentTextIndex)
+		? dialogueNode->RootTextCustomIds[CurrentTextIndex]
+		: NAME_None;
+	if (!customTextId.IsNone())
+	{
+		const FText* customText = GetDefault<UDialogueToolSettings>()->TopicCustomTextList.Find(customTextId);
+		CurrentSourceText = customText ? *customText : FText::GetEmpty();
+	}
+	else if (dialogueNode->RootTextProviders.IsValidIndex(CurrentTextIndex)
+		&& dialogueNode->RootTextProviders[CurrentTextIndex])
+	{
+		CurrentSourceText = ResolveProviderText(dialogueNode->RootTextProviders[CurrentTextIndex]);
+	}
+	else
+	{
+		CurrentSourceText = dialogueNode->RootText[CurrentTextIndex];
+	}
 	if (dialogueNode->RootSounds.IsValidIndex(CurrentTextIndex))
 	{
 		if (USoundBase* sound = dialogueNode->RootSounds[CurrentTextIndex].LoadSynchronous())

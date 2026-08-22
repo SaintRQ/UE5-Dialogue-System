@@ -45,6 +45,10 @@ public:
 	
 	// ID | Text
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Text")
+	TMap<FName, FText> TopicCustomTextList;
+
+	// ID | Text
+	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Text")
 	TMap<FName, FText> ResponseCustomTextList; 
 	
 	UPROPERTY(Config, EditAnywhere, BlueprintReadOnly, Category = "Text",

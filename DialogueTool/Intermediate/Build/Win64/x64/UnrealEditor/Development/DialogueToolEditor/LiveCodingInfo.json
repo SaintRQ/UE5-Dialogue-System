@@ -42,6 +42,7 @@
 			"DialogueToolEditor.cpp.obj",
 			"SDialogueAddButton.cpp.obj",
 			"SDialogueConditionPopup.cpp.obj",
+			"SDialogueCustomTextPopup.cpp.obj",
 			"SDialogueGraphActionNode.cpp.obj",
 			"SDialogueGraphFinishNode.cpp.obj",
 			"SDialogueGraphInitNode.cpp.obj",

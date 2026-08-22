@@ -53,11 +53,11 @@ private:
 	// Adds a response entry.
 	FReply OnAddResponse();
 
-	// Opens the custom response text menu.
-	FReply OnOpenCustomResponseMenu();
+	// Opens the custom topic or response text menu.
+	FReply OnOpenCustomTextMenu(bool response);
 
-	// Adds a response linked to a custom text identifier.
-	void OnAddCustomResponse(FName customTextId);
+	// Adds a topic or response entry linked to a custom text identifier.
+	void OnAddCustomText(FName customTextId, bool response);
 
 	// Adds the terminal response entry.
 	FReply OnAddFinishResponse();

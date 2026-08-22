@@ -164,6 +164,9 @@ struct FDialogueNode
 	UPROPERTY()
 	TArray<FText> RootText = TArray<FText>();
 
+	UPROPERTY()
+	TArray<FName> RootTextCustomIds;
+
 	UPROPERTY(Instanced)
 	TArray<TObjectPtr<UDialogueProvider>> RootTextProviders;
 

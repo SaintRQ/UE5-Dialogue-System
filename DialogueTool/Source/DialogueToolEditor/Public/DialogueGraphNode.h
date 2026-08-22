@@ -90,8 +90,8 @@ public:
 	// Remaps copied runtime transitions to newly pasted node identifiers.
 	void RemapPastedConnections(const TMap<int64, int64>& pastedNodeIds);
 
-	// Adds an empty root text entry.
-	void AddRootText();
+	// Adds an empty root text or a custom text entry for the specified identifier.
+	void AddRootText(FName customTextId = NAME_None);
 
 	// Removes a root text entry.
 	void RemoveRootText(int32 textIndex);

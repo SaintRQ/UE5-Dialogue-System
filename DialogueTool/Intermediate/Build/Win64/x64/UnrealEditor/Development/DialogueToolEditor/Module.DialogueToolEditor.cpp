@@ -39,6 +39,7 @@
 #include "D:/UE4/Projects/project_alay/Plugins/DialogueTool/Source/DialogueToolEditor/Private/DialogueToolEditor.cpp"
 #include "D:/UE4/Projects/project_alay/Plugins/DialogueTool/Source/DialogueToolEditor/Private/SDialogueAddButton.cpp"
 #include "D:/UE4/Projects/project_alay/Plugins/DialogueTool/Source/DialogueToolEditor/Private/SDialogueConditionPopup.cpp"
+#include "D:/UE4/Projects/project_alay/Plugins/DialogueTool/Source/DialogueToolEditor/Private/SDialogueCustomTextPopup.cpp"
 #include "D:/UE4/Projects/project_alay/Plugins/DialogueTool/Source/DialogueToolEditor/Private/SDialogueGraphActionNode.cpp"
 #include "D:/UE4/Projects/project_alay/Plugins/DialogueTool/Source/DialogueToolEditor/Private/SDialogueGraphFinishNode.cpp"
 #include "D:/UE4/Projects/project_alay/Plugins/DialogueTool/Source/DialogueToolEditor/Private/SDialogueGraphInitNode.cpp"

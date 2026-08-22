@@ -82,7 +82,7 @@ struct Z_Construct_UClass_UDialogueGraphNode_Statics
 	static const UECodeGen_Private::FClassParams ClassParams;
 };
 const UECodeGen_Private::FInt64PropertyParams Z_Construct_UClass_UDialogueGraphNode_Statics::NewProp_DialogueNodeId = { "DialogueNodeId", nullptr, (EPropertyFlags)0x0040000000000000, UECodeGen_Private::EPropertyGenFlags::Int64, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueGraphNode, DialogueNodeId), METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_DialogueNodeId_MetaData), NewProp_DialogueNodeId_MetaData) };
-const UECodeGen_Private::FStructPropertyParams Z_Construct_UClass_UDialogueGraphNode_Statics::NewProp_ClipboardDialogueData = { "ClipboardDialogueData", nullptr, (EPropertyFlags)0x0040008000000000, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueGraphNode, ClipboardDialogueData), Z_Construct_UScriptStruct_FDialogueNode, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_ClipboardDialogueData_MetaData), NewProp_ClipboardDialogueData_MetaData) }; // 633395235
+const UECodeGen_Private::FStructPropertyParams Z_Construct_UClass_UDialogueGraphNode_Statics::NewProp_ClipboardDialogueData = { "ClipboardDialogueData", nullptr, (EPropertyFlags)0x0040008000000000, UECodeGen_Private::EPropertyGenFlags::Struct, RF_Public|RF_Transient|RF_MarkAsNative, nullptr, nullptr, 1, STRUCT_OFFSET(UDialogueGraphNode, ClipboardDialogueData), Z_Construct_UScriptStruct_FDialogueNode, METADATA_PARAMS(UE_ARRAY_COUNT(NewProp_ClipboardDialogueData_MetaData), NewProp_ClipboardDialogueData_MetaData) }; // 1579195436
 void Z_Construct_UClass_UDialogueGraphNode_Statics::NewProp_HasClipboardDialogueData_SetBit(void* Obj)
 {
 	((UDialogueGraphNode*)Obj)->HasClipboardDialogueData = 1;
@@ -131,10 +131,10 @@ UDialogueGraphNode::~UDialogueGraphNode() {}
 struct Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueToolEditor_Public_DialogueGraphNode_h__Script_DialogueToolEditor_Statics
 {
 	static constexpr FClassRegisterCompiledInInfo ClassInfo[] = {
-		{ Z_Construct_UClass_UDialogueGraphNode, UDialogueGraphNode::StaticClass, TEXT("UDialogueGraphNode"), &Z_Registration_Info_UClass_UDialogueGraphNode, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UDialogueGraphNode), 4120976771U) },
+		{ Z_Construct_UClass_UDialogueGraphNode, UDialogueGraphNode::StaticClass, TEXT("UDialogueGraphNode"), &Z_Registration_Info_UClass_UDialogueGraphNode, CONSTRUCT_RELOAD_VERSION_INFO(FClassReloadVersionInfo, sizeof(UDialogueGraphNode), 2555283770U) },
 	};
 };
-static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueToolEditor_Public_DialogueGraphNode_h__Script_DialogueToolEditor_823237370(TEXT("/Script/DialogueToolEditor"),
+static FRegisterCompiledInInfo Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueToolEditor_Public_DialogueGraphNode_h__Script_DialogueToolEditor_3087437507(TEXT("/Script/DialogueToolEditor"),
 	Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueToolEditor_Public_DialogueGraphNode_h__Script_DialogueToolEditor_Statics::ClassInfo, UE_ARRAY_COUNT(Z_CompiledInDeferFile_FID_Projects_project_alay_Plugins_DialogueTool_Source_DialogueToolEditor_Public_DialogueGraphNode_h__Script_DialogueToolEditor_Statics::ClassInfo),
 	nullptr, 0,
 	nullptr, 0);

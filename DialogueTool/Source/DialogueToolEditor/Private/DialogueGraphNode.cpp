@@ -49,7 +49,9 @@ void UDialogueGraphNode::PostLoad()
 	}
 	for (int32 textIndex = 0; textIndex < dialogueData->RootText.Num(); ++textIndex)
 	{
-		if (!GetRootTextProviderInputPin(textIndex))
+		const bool bNeedsProviderPin = !dialogueData->RootTextCustomIds.IsValidIndex(textIndex)
+			|| dialogueData->RootTextCustomIds[textIndex].IsNone();
+		if (bNeedsProviderPin != (GetRootTextProviderInputPin(textIndex) != nullptr))
 		{
 			ReconstructNode();
 			return;
@@ -82,6 +84,12 @@ void UDialogueGraphNode::AllocateDefaultPins()
 
 	for (int32 textIndex = 0; textIndex < dialogueData->RootText.Num(); ++textIndex)
 	{
+		if (dialogueData->RootTextCustomIds.IsValidIndex(textIndex)
+			&& !dialogueData->RootTextCustomIds[textIndex].IsNone())
+		{
+			continue;
+		}
+
 		UEdGraphPin* providerPin = CreatePin(
 			EGPD_Input,
 			topicResponseProviderPinCategory,
@@ -165,6 +173,7 @@ void UDialogueGraphNode::PostPasteNode()
 		}
 		dialogueData.RootSounds.SetNum(dialogueData.RootText.Num());
 		dialogueData.RootTextProviders.SetNum(dialogueData.RootText.Num());
+		dialogueData.RootTextCustomIds.SetNum(dialogueData.RootText.Num());
 		for (TObjectPtr<UDialogueProvider>& provider : dialogueData.RootTextProviders)
 		{
 			provider = nullptr;
@@ -472,13 +481,22 @@ void UDialogueGraphNode::RemapPastedConnections(const TMap<int64, int64>& pasted
 	NotifyDialogueChanged(false);
 }
 
-void UDialogueGraphNode::AddRootText()
+void UDialogueGraphNode::AddRootText(FName customTextId)
 {
+	if (!customTextId.IsNone()
+		&& !GetDefault<UDialogueToolSettings>()->TopicCustomTextList.Contains(customTextId))
+	{
+		return;
+	}
+
 	if (FDialogueNode* dialogueData = GetDialogueData())
 	{
-		const FScopedTransaction transaction(LOCTEXT("AddRootText", "Add Dialogue Text"));
+		const FScopedTransaction transaction(customTextId.IsNone()
+			? LOCTEXT("AddRootText", "Add Dialogue Text")
+			: LOCTEXT("AddCustomRootText", "Add Custom Dialogue Text"));
 		GetDialogueObject()->Modify();
 		dialogueData->RootText.Add(FText::GetEmpty());
+		dialogueData->RootTextCustomIds.Add(customTextId);
 		dialogueData->RootSounds.Add(nullptr);
 		dialogueData->RootTextProviders.Add(nullptr);
 		NotifyDialogueChanged(true);
@@ -497,6 +515,7 @@ void UDialogueGraphNode::RemoveRootText(int32 textIndex)
 	GetDialogueObject()->Modify();
 	dialogueData->RootSounds.SetNum(dialogueData->RootText.Num());
 	dialogueData->RootTextProviders.SetNum(dialogueData->RootText.Num());
+	dialogueData->RootTextCustomIds.SetNum(dialogueData->RootText.Num());
 	if (UEdGraphPin* removedProviderPin = GetRootTextProviderInputPin(textIndex))
 	{
 		removedProviderPin->BreakAllPinLinks();
@@ -510,6 +529,7 @@ void UDialogueGraphNode::RemoveRootText(int32 textIndex)
 		}
 	}
 	dialogueData->RootText.RemoveAt(textIndex);
+	dialogueData->RootTextCustomIds.RemoveAt(textIndex);
 	dialogueData->RootSounds.RemoveAt(textIndex);
 	dialogueData->RootTextProviders.RemoveAt(textIndex);
 	NotifyDialogueChanged(true);
@@ -519,6 +539,8 @@ void UDialogueGraphNode::SetRootText(int32 textIndex, const FText& text)
 {
 	FDialogueNode* dialogueData = GetDialogueData();
 	if (!dialogueData || !dialogueData->RootText.IsValidIndex(textIndex)
+		|| (dialogueData->RootTextCustomIds.IsValidIndex(textIndex)
+			&& !dialogueData->RootTextCustomIds[textIndex].IsNone())
 		|| (dialogueData->RootTextProviders.IsValidIndex(textIndex)
 			&& dialogueData->RootTextProviders[textIndex])
 		|| (GetRootTextProviderInputPin(textIndex)
@@ -881,18 +903,20 @@ void UDialogueGraphNode::RefreshRootTextProvider(int32 textIndex)
 	}
 
 	dialogueData->RootTextProviders.SetNum(dialogueData->RootText.Num());
+	dialogueData->RootTextCustomIds.SetNum(dialogueData->RootText.Num());
 	UEdGraphPin* providerPin = GetRootTextProviderInputPin(textIndex);
 	const UDialogueGraphResponseProviderNode* providerNode = providerPin && !providerPin->LinkedTo.IsEmpty()
 		? Cast<UDialogueGraphResponseProviderNode>(providerPin->LinkedTo[0]->GetOwningNode())
 		: nullptr;
 	UDialogueProvider* provider = providerNode ? providerNode->GetDialogueProvider() : nullptr;
-	const bool bHasProvider = providerNode != nullptr;
+	const bool bCustomText = !dialogueData->RootTextCustomIds[textIndex].IsNone();
+	const bool bHasProvider = !bCustomText && providerNode != nullptr;
 	if (dialogueData->RootTextProviders[textIndex] != provider
-		|| (bHasProvider && !dialogueData->RootText[textIndex].IsEmpty()))
+		|| ((bCustomText || bHasProvider) && !dialogueData->RootText[textIndex].IsEmpty()))
 	{
 		dialogueObject->Modify();
-		dialogueData->RootTextProviders[textIndex] = provider;
-		if (bHasProvider)
+		dialogueData->RootTextProviders[textIndex] = bCustomText ? nullptr : provider;
+		if (bCustomText || bHasProvider)
 		{
 			dialogueData->RootText[textIndex] = FText::GetEmpty();
 		}
