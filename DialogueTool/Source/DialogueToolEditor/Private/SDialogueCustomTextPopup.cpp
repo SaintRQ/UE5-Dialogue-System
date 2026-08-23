@@ -130,13 +130,15 @@ void SDialogueCustomTextPopup::RefreshEntries()
 	});
 
 	int32 visibleEntries = 0;
-	const FString searchText = SearchText.TrimStartAndEnd();
+	const FString searchText = FText::FromString(SearchText.TrimStartAndEnd()).ToLower().ToString();
 	for (const FName customTextId : customTextIds)
 	{
 		const FText& customText = customTextList.FindChecked(customTextId);
+		const FString customTextIdString = FText::FromName(customTextId).ToLower().ToString();
+		const FString customTextString = customText.ToLower().ToString();
 		if (!searchText.IsEmpty()
-			&& !customTextId.ToString().Contains(searchText, ESearchCase::IgnoreCase)
-			&& !customText.ToString().Contains(searchText, ESearchCase::IgnoreCase))
+			&& !customTextIdString.Contains(searchText)
+			&& !customTextString.Contains(searchText))
 		{
 			continue;
 		}
