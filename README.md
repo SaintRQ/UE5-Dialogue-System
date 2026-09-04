@@ -115,7 +115,7 @@ DIALOGUE START: Default
 |---|---|
 | `Auto Continue` | Автоматическая промотка текста (без клика). |
 | `Auto Continue Delay` | Задержка перед автоматическим продолжением в секундах. Доступна при включённом `Auto Continue`. |
-| `Allow Continue Click` | Разрешает ручной вызов `ContinueDialogue` при включённом `Auto Continue`. |
+| `Allow Manual Continue` | Разрешает ручной вызов `ContinueDialogue` при включённом `Auto Continue`. |
 | `Characters Per Second` | Скорость посимвольного вывода. Значение `0` или меньше показывает текст мгновенно. |
 | `Response End Dialogue Text` | Текст автоматически созданного ответа, завершающего обычный диалог. Рекомендуется задать непустое значение. |
 | `Response Return Dialogue Text` | Текст терминального ответа внутри библиотеки. По умолчанию — `Return`. |
@@ -288,11 +288,15 @@ TOPIC ──► ACTIONS ──► TOPIC
 
 ### RANDOM
 
+<img width="826" height="569" alt="rand" src="https://github.com/user-attachments/assets/590617b2-10bd-47b6-9397-19d7d97138c0" />
+
 Случайно выбирает один из выходов с равной вероятностью. В узле всегда остаётся минимум два выхода; система по возможности не повторяет результат предыдущего прохода.
 
 **Когда полезно:** для случайной реплики, реакции или небольшого разнообразия при повторных разговорах.
 
 ### SKIP TEXT
+
+<img width="774" height="535" alt="skip" src="https://github.com/user-attachments/assets/6880f3e0-66d9-4d55-946d-03517be4a95b" />
 
 Сохраняет на экране текст текущего `TOPIC` и сразу показывает ответы следующего `TOPIC`, не проигрывая его текст, провайдеры и звуки. Следующий топик всё равно отмечается посещённым. Если ответов у него нет, он открывается обычным способом, чтобы поток не остановился.
 
@@ -848,7 +852,7 @@ Settings are located at `Project Settings > Plugins > Dialogue Tool` and are sav
 |---|---|
 | `Auto Continue` | Automatically advances fully revealed text when no response is waiting. |
 | `Auto Continue Delay` | Delay before automatic continuation in seconds. Available when `Auto Continue` is enabled. |
-| `Allow Continue Click` | Allows manual `ContinueDialogue` calls while `Auto Continue` is enabled. |
+| `Allow Manual Continue` | Allows manual `ContinueDialogue` calls while `Auto Continue` is enabled. |
 | `Characters Per Second` | Character-by-character output speed. A value of `0` or less displays text instantly. |
 | `Response End Dialogue Text` | Text of the automatically created response that ends a normal dialogue. A non-empty value is recommended. |
 | `Response Return Dialogue Text` | Text of the terminal response inside a library. Default: `Return`. |
@@ -1019,11 +1023,15 @@ The branch name is only an editor label. `?` opens the conditions, `Add` adds a 
 
 ### RANDOM
 
+<img width="826" height="569" alt="rand" src="https://github.com/user-attachments/assets/c669dbbd-4a32-4b7a-a93b-10ef3c1f0200" />
+
 Selects one output with equal probability. At least two outputs remain available; when possible, the previous result is not selected again.
 
 **Useful when:** you want random lines, reactions, or some variety in repeated conversations.
 
 ### SKIP TEXT
+
+<img width="774" height="535" alt="skip" src="https://github.com/user-attachments/assets/9ea7b542-7268-4bd8-9a98-e53df355d595" />
 
 Keeps the current `TOPIC` text visible and immediately shows the next `TOPIC` responses without playing that topic's text, providers, or sounds. The skipped topic is still marked as visited. If it has no responses, it opens normally so flow cannot get stuck.
 
