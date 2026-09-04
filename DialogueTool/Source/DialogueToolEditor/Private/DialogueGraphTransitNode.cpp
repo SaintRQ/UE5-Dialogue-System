@@ -5,12 +5,14 @@
 #include "DialogueGraphInitNode.h"
 #include "DialogueGraphLibrarySchema.h"
 #include "DialogueGraphNode.h"
+#include "DialogueGraphRandomNode.h"
 #include "DialogueGraphSkipTextNode.h"
 #include "DialogueGraphSwitcherNode.h"
 #include "DialogueGraphUtilities.h"
 #include "DialogueLibraryObject.h"
 #include "DialogueObject.h"
 #include "EdGraph/EdGraph.h"
+#include "Monologue/MonologueObject.h"
 #include "ScopedTransaction.h"
 
 #define LOCTEXT_NAMESPACE "DialogueGraphTransitNode"
@@ -134,6 +136,15 @@ FText UDialogueGraphTransitNode::GetNodeTitle(ENodeTitleType::Type titleType) co
 
 FText UDialogueGraphTransitNode::GetTooltipText() const
 {
+	if (UMonologueObject::IsMonologueAsset(GetDialogueObject()))
+	{
+		return LOCTEXT(
+			"MonologueNodeTooltip",
+			"Temporarily transfers execution from this monologue into the selected monologue library.\n"
+			"The library chooses its first valid entry branch and runs until it reaches RETURN.\n"
+			"After returning, the configured Return actions execute and monologue flow continues.");
+	}
+
 	return LOCTEXT(
 		"NodeTooltip",
 		"Temporarily transfers execution from this dialogue into the selected dialogue library.\n"
@@ -264,6 +275,10 @@ void UDialogueGraphTransitNode::RefreshSourceNodes() const
 			else if (UDialogueGraphSwitcherNode* switcherNode = Cast<UDialogueGraphSwitcherNode>(node))
 			{
 				switcherNode->RefreshOutputConnections();
+			}
+			else if (UDialogueGraphRandomNode* randomNode = Cast<UDialogueGraphRandomNode>(node))
+			{
+				randomNode->RefreshOutputConnections();
 			}
 			else if (UDialogueGraphTransitNode* transitNode = Cast<UDialogueGraphTransitNode>(node);
 				transitNode && transitNode != this)

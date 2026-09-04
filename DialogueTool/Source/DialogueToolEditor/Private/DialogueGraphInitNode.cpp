@@ -7,6 +7,7 @@
 #include "DialogueLibraryObject.h"
 #include "DialogueObject.h"
 #include "EdGraph/EdGraph.h"
+#include "Monologue/MonologueObject.h"
 #include "ScopedTransaction.h"
 
 #define LOCTEXT_NAMESPACE "DialogueGraphInitNode"
@@ -129,24 +130,34 @@ bool UDialogueGraphInitNode::CanDuplicateNode() const
 
 FText UDialogueGraphInitNode::GetNodeTitle(ENodeTitleType::Type titleType) const
 {
-	return GetDialogueObject() && GetDialogueObject()->IsA<UDialogueLibraryObject>()
+	const UDialogueObject* dialogueObject = GetDialogueObject();
+	return dialogueObject && dialogueObject->IsA<UDialogueLibraryObject>()
 		? LOCTEXT("LibraryNodeTitle", "LIBRARY START")
-		: LOCTEXT("NodeTitle", "DIALOGUE START");
+		: UMonologueObject::IsMonologueAsset(dialogueObject)
+			? LOCTEXT("MonologueNodeTitle", "MONOLOGUE START")
+			: LOCTEXT("NodeTitle", "DIALOGUE START");
 }
 
 FText UDialogueGraphInitNode::GetTooltipText() const
 {
-	return GetDialogueObject() && GetDialogueObject()->IsA<UDialogueLibraryObject>()
+	const UDialogueObject* dialogueObject = GetDialogueObject();
+	return dialogueObject && dialogueObject->IsA<UDialogueLibraryObject>()
 		? LOCTEXT(
 			"LibraryNodeTooltip",
 			"Defines the entry branches of this dialogue library.\n"
-			"Branches are checked from top to bottom; the first branch whose conditions pass is selected.\n"
+			"Conditional branches are checked from top to bottom; Default is used when none match.\n"
 			"Its actions execute in order before dialogue flow continues through the corresponding output.")
-		: LOCTEXT(
-			"NodeTooltip",
-			"Defines the entry branches used when this dialogue starts.\n"
-			"Branches are checked from top to bottom; the first branch whose conditions pass is selected.\n"
-			"Its actions execute in order before dialogue flow continues through the corresponding output.");
+		: UMonologueObject::IsMonologueAsset(dialogueObject)
+			? LOCTEXT(
+				"MonologueNodeTooltip",
+				"Defines the entry branches used when this monologue starts.\n"
+				"Conditional branches are checked from top to bottom; Default is used when none match.\n"
+				"Its actions execute in order before monologue flow continues through the corresponding output.")
+			: LOCTEXT(
+				"NodeTooltip",
+				"Defines the entry branches used when this dialogue starts.\n"
+				"Conditional branches are checked from top to bottom; Default is used when none match.\n"
+				"Its actions execute in order before dialogue flow continues through the corresponding output.");
 }
 
 TArray<FDialogueInit>* UDialogueGraphInitNode::GetInitData()
@@ -174,6 +185,12 @@ UEdGraphPin* UDialogueGraphInitNode::GetInitOutputPin(int32 initIndex) const
 	return FindPin(GetInitPinName(initIndex), EGPD_Output);
 }
 
+UEdGraphPin* UDialogueGraphInitNode::GetDefaultOutputPin() const
+{
+	const TArray<FDialogueInit>* initData = GetInitData();
+	return initData && !initData->IsEmpty() ? GetInitOutputPin(initData->Num() - 1) : nullptr;
+}
+
 void UDialogueGraphInitNode::AddInit()
 {
 	if (UDialogueObject* dialogueObject = GetDialogueObject())
@@ -181,7 +198,18 @@ void UDialogueGraphInitNode::AddInit()
 		const FScopedTransaction transaction(LOCTEXT("AddInit", "Add Dialogue Start"));
 		dialogueObject->Modify();
 		Modify();
-		dialogueObject->GetDialogueInitData().AddDefaulted();
+		TArray<FDialogueInit>& initData = dialogueObject->GetDialogueInitData();
+		if (initData.IsEmpty())
+		{
+			initData.AddDefaulted_GetRef().Name = TEXT("Default");
+		}
+		const int32 defaultIndex = initData.Num() - 1;
+		if (UEdGraphPin* defaultPin = GetDefaultOutputPin())
+		{
+			defaultPin->PinName = GetInitPinName(defaultIndex + 1);
+		}
+		FDialogueInit& init = initData.InsertDefaulted_GetRef(defaultIndex);
+		init.Name = FName(*FString::Printf(TEXT("Condition %d"), initData.Num() - 1));
 		NotifyInitChanged(true);
 	}
 }
@@ -190,7 +218,8 @@ void UDialogueGraphInitNode::RemoveInit(int32 initIndex)
 {
 	TArray<FDialogueInit>* initData = GetInitData();
 	UDialogueObject* dialogueObject = GetDialogueObject();
-	if (!initData || !dialogueObject || initData->Num() <= 1 || !initData->IsValidIndex(initIndex))
+	if (!initData || !dialogueObject || initData->Num() <= 1 || !initData->IsValidIndex(initIndex)
+		|| initIndex == initData->Num() - 1)
 	{
 		return;
 	}
@@ -291,6 +320,24 @@ void UDialogueGraphInitNode::SetInitConditionClass(
 	(*initData)[initIndex].Conditions[conditionIndex] = conditionClass
 		? NewObject<UDialogueCondition>(dialogueObject, const_cast<UClass*>(conditionClass), NAME_None, RF_Transactional)
 		: nullptr;
+	dialogueObject->MarkPackageDirty();
+}
+
+void UDialogueGraphInitNode::SetInitConditionMode(
+	const int32 InitIndex,
+	const EDialogueConditionMode ConditionMode)
+{
+	TArray<FDialogueInit>* initData = GetInitData();
+	UDialogueObject* dialogueObject = GetDialogueObject();
+	if (!initData || !dialogueObject || !initData->IsValidIndex(InitIndex)
+		|| (*initData)[InitIndex].ConditionMode == ConditionMode)
+	{
+		return;
+	}
+
+	const FScopedTransaction transaction(LOCTEXT("SetInitConditionMode", "Set Dialogue Start Condition Mode"));
+	dialogueObject->Modify();
+	(*initData)[InitIndex].ConditionMode = ConditionMode;
 	dialogueObject->MarkPackageDirty();
 }
 

@@ -2,6 +2,7 @@
 
 #include "SDialogueConditionPopup.h"
 
+#include "Brushes/SlateRoundedBoxBrush.h"
 #include "DialogueCondition.h"
 #include "SDialogueAddButton.h"
 #include "SDialogueObjectEntry.h"
@@ -19,10 +20,14 @@
 void SDialogueConditionPopup::Construct(const FArguments& arguments)
 {
 	ConditionCount = arguments._ConditionCount;
+	ConditionMode = arguments._ConditionMode;
 	OnGetCondition = arguments._OnGetCondition;
 	OnSetConditionClass = arguments._OnSetConditionClass;
 	OnAddCondition = arguments._OnAddCondition;
 	OnRemoveCondition = arguments._OnRemoveCondition;
+	OnSetConditionMode = arguments._OnSetConditionMode;
+	AllModeBrush = MakeShared<FSlateRoundedBoxBrush>(FLinearColor(0.06f, 0.38f, 0.92f, 0.5f), 8.0f);
+	AnyModeBrush = MakeShared<FSlateRoundedBoxBrush>(FLinearColor(0.04f, 0.7f, 0.24f, 0.5f), 8.0f);
 
 	ChildSlot
 	[
@@ -34,7 +39,7 @@ void SDialogueConditionPopup::Construct(const FArguments& arguments)
 			SNew(SBorder)
 			.BorderImage(FAppStyle::GetBrush("WhiteBrush"))
 			.BorderBackgroundColor(FLinearColor(0.008f, 0.012f, 0.018f))
-			.Padding(6.0f)
+			.Padding(1.0f)
 			[
 				SNew(SVerticalBox)
 
@@ -51,6 +56,44 @@ void SDialogueConditionPopup::Construct(const FArguments& arguments)
 						.Text(LOCTEXT("ConditionsTitle", "Conditions"))
 						.Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
 						.Justification(ETextJustify::Center)
+					]
+				]
+
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				.HAlign(HAlign_Center)
+				.Padding(2.0f, 4.0f, 2.0f, 7.0f)
+				[
+					SNew(SHorizontalBox)
+
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					.VAlign(VAlign_Center)
+					.Padding(0.0f, 0.0f, 8.0f, 0.0f)
+					[
+						SNew(STextBlock)
+						.Text(LOCTEXT("ConditionMode", "MATCH"))
+						.Font(FCoreStyle::GetDefaultFontStyle("Bold", 9))
+					]
+
+					+ SHorizontalBox::Slot()
+					.AutoWidth()
+					[
+						SNew(SBorder)
+						.BorderImage(this, &SDialogueConditionPopup::GetModeBrush)
+						.Padding(0.0f)
+						[
+							SNew(SButton)
+							.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+							.ContentPadding(FMargin(14.0f, 3.0f))
+							.OnClicked(this, &SDialogueConditionPopup::OnConditionModeClicked)
+							[
+								SNew(STextBlock)
+								.Text(this, &SDialogueConditionPopup::GetModeText)
+								.Font(FCoreStyle::GetDefaultFontStyle("Bold", 9))
+								.ColorAndOpacity(this, &SDialogueConditionPopup::GetModeTextColor)
+							]
+						]
 					]
 				]
 
@@ -146,9 +189,38 @@ UDialogueCondition* SDialogueConditionPopup::GetCondition(int32 conditionIndex) 
 	return OnGetCondition.IsBound() ? OnGetCondition.Execute(conditionIndex) : nullptr;
 }
 
+const FSlateBrush* SDialogueConditionPopup::GetModeBrush() const
+{
+	return ConditionMode.Get() == EDialogueConditionMode::All
+		? AllModeBrush.Get()
+		: AnyModeBrush.Get();
+}
+
+FText SDialogueConditionPopup::GetModeText() const
+{
+	return ConditionMode.Get() == EDialogueConditionMode::All
+		? LOCTEXT("AllMode", "ALL")
+		: LOCTEXT("AnyMode", "ANY");
+}
+
+FSlateColor SDialogueConditionPopup::GetModeTextColor() const
+{
+	return ConditionMode.Get() == EDialogueConditionMode::All
+		? FLinearColor(0.42f, 0.72f, 1.0f)
+		: FLinearColor(0.42f, 1.0f, 0.6f);
+}
+
 void SDialogueConditionPopup::OnConditionClassSet(const UClass* conditionClass, int32 conditionIndex)
 {
 	OnSetConditionClass.ExecuteIfBound(conditionClass, conditionIndex);
+}
+
+FReply SDialogueConditionPopup::OnConditionModeClicked()
+{
+	OnSetConditionMode.ExecuteIfBound(ConditionMode.Get() == EDialogueConditionMode::All
+		? EDialogueConditionMode::Any
+		: EDialogueConditionMode::All);
+	return FReply::Handled();
 }
 
 FReply SDialogueConditionPopup::OnAddConditionClicked()

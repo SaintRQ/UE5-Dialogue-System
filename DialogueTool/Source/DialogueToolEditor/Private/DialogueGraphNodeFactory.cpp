@@ -6,6 +6,7 @@
 #include "DialogueGraphFinishNode.h"
 #include "DialogueGraphInitNode.h"
 #include "DialogueGraphNode.h"
+#include "DialogueGraphRandomNode.h"
 #include "DialogueGraphRerouteNode.h"
 #include "DialogueGraphResponseProviderNode.h"
 #include "DialogueGraphSkipTextNode.h"
@@ -15,6 +16,7 @@
 #include "SDialogueGraphFinishNode.h"
 #include "SDialogueGraphInitNode.h"
 #include "SDialogueGraphNode.h"
+#include "SDialogueGraphRandomNode.h"
 #include "SDialogueGraphResponseProviderNode.h"
 #include "SDialogueGraphSkipTextNode.h"
 #include "SDialogueGraphSwitcherNode.h"
@@ -46,6 +48,11 @@ TSharedPtr<SGraphNode> FDialogueGraphNodeFactory::CreateNode(UEdGraphNode* node)
 	if (UDialogueGraphSwitcherNode* switcherNode = Cast<UDialogueGraphSwitcherNode>(node))
 	{
 		return SNew(SDialogueGraphSwitcherNode, switcherNode);
+	}
+
+	if (UDialogueGraphRandomNode* randomNode = Cast<UDialogueGraphRandomNode>(node))
+	{
+		return SNew(SDialogueGraphRandomNode, randomNode);
 	}
 
 	if (UDialogueGraphSkipTextNode* skipTextNode = Cast<UDialogueGraphSkipTextNode>(node))

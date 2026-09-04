@@ -4,13 +4,59 @@
 
 #include "Hash/CityHash.h"
 #include "Misc/Guid.h"
+#include "Monologue/MonologueObject.h"
+
+int32 FDialogueCache::SelectRandomOutput(const int64 RandomID, const int32 OutputCount)
+{
+	if (OutputCount <= 0)
+	{
+		return INDEX_NONE;
+	}
+
+	const int32* previousOutput = RandomOutputHistory.Find(RandomID);
+	int32 outputIndex = FMath::RandHelper(OutputCount);
+	for (int32 retryIndex = 0;
+		previousOutput && outputIndex == *previousOutput && retryIndex < 10;
+		++retryIndex)
+	{
+		outputIndex = FMath::RandHelper(OutputCount);
+	}
+	RandomOutputHistory.Add(RandomID, outputIndex);
+	return outputIndex;
+}
+
+void FDialogueNode::EnsureTextTimingSettings(const bool EnabledByDefault)
+{
+	MonologueTextSettings.SetNum(RootText.Num());
+	for (FMonologueTextSettings& settings : MonologueTextSettings)
+	{
+		if (!settings.Initialized)
+		{
+			if (!EnabledByDefault)
+			{
+				settings.Enabled = false;
+			}
+			settings.Initialized = true;
+		}
+	}
+}
 
 void FDialogueSwitcher::EnsureMinimumConditions()
 {
 	while (Conditions.Num() < 2)
 	{
 		FDialogueSwitcherCondition& condition = Conditions.AddDefaulted_GetRef();
-		condition.Name = FName(*FString::Printf(TEXT("Condition %d"), Conditions.Num()));
+		condition.Name = Conditions.Num() == 2
+			? TEXT("Default")
+			: FName(*FString::Printf(TEXT("Condition %d"), Conditions.Num()));
+	}
+}
+
+void FDialogueRandom::EnsureMinimumOutputs()
+{
+	while (Outputs.Num() < 2)
+	{
+		Outputs.AddDefaulted();
 	}
 }
 
@@ -18,9 +64,14 @@ void UDialogueObject::PostLoad()
 {
 	Super::PostLoad();
 	TSet<int64> responseIds;
+	const bool bMonologue = UMonologueObject::IsMonologueAsset(this);
 	for (TPair<int64, FDialogueNode>& dialogueNode : DialogueNodes)
 	{
 		FDialogueNode& node = dialogueNode.Value;
+		if (node.Role < 0)
+		{
+			node.Role = bMonologue ? 0 : 1;
+		}
 		if (node.RootText.IsEmpty())
 		{
 			node.RootText.Add(FText::GetEmpty());
@@ -28,6 +79,7 @@ void UDialogueObject::PostLoad()
 		node.RootSounds.SetNum(node.RootText.Num());
 		node.RootTextProviders.SetNum(node.RootText.Num());
 		node.RootTextCustomIds.SetNum(node.RootText.Num());
+		node.EnsureTextTimingSettings(bMonologue);
 		for (int32 textIndex = 0; textIndex < node.RootText.Num(); ++textIndex)
 		{
 			if (!node.RootTextCustomIds[textIndex].IsNone())
@@ -93,6 +145,10 @@ void UDialogueObject::PostLoad()
 	{
 		dialogueSwitcher.Value.EnsureMinimumConditions();
 	}
+	for (TPair<int64, FDialogueRandom>& dialogueRandom : DialogueRandoms)
+	{
+		dialogueRandom.Value.EnsureMinimumOutputs();
+	}
 }
 
 int64 UDialogueObject::GenerateUniqueId() const
@@ -124,6 +180,7 @@ int64 UDialogueObject::GenerateUniqueId() const
 		|| DialogueSwitchers.Contains(id)
 		|| DialogueTransits.Contains(id)
 		|| DialogueSkipTexts.Contains(id)
+		|| DialogueRandoms.Contains(id)
 		|| containsResponseId(id));
 
 	return id;
@@ -132,6 +189,10 @@ int64 UDialogueObject::GenerateUniqueId() const
 FDialogueNode& UDialogueObject::AddDialogueNode(int64 nodeId)
 {
 	FDialogueNode& dialogueNode = DialogueNodes.FindOrAdd(nodeId);
+	if (dialogueNode.Role < 0)
+	{
+		dialogueNode.Role = UMonologueObject::IsMonologueAsset(this) ? 0 : 1;
+	}
 	if (dialogueNode.RootText.IsEmpty())
 	{
 		dialogueNode.RootText.Add(FText::GetEmpty());
@@ -139,6 +200,7 @@ FDialogueNode& UDialogueObject::AddDialogueNode(int64 nodeId)
 	dialogueNode.RootSounds.SetNum(dialogueNode.RootText.Num());
 	dialogueNode.RootTextProviders.SetNum(dialogueNode.RootText.Num());
 	dialogueNode.RootTextCustomIds.SetNum(dialogueNode.RootText.Num());
+	dialogueNode.EnsureTextTimingSettings(UMonologueObject::IsMonologueAsset(this));
 	return dialogueNode;
 }
 
@@ -217,6 +279,28 @@ const FDialogueSkipText* UDialogueObject::FindDialogueSkipText(int64 skipTextId)
 void UDialogueObject::RemoveDialogueSkipText(int64 skipTextId)
 {
 	DialogueSkipTexts.Remove(skipTextId);
+}
+
+FDialogueRandom& UDialogueObject::AddDialogueRandom(const int64 RandomId)
+{
+	FDialogueRandom& dialogueRandom = DialogueRandoms.FindOrAdd(RandomId);
+	dialogueRandom.EnsureMinimumOutputs();
+	return dialogueRandom;
+}
+
+FDialogueRandom* UDialogueObject::FindDialogueRandom(const int64 RandomId)
+{
+	return DialogueRandoms.Find(RandomId);
+}
+
+const FDialogueRandom* UDialogueObject::FindDialogueRandom(const int64 RandomId) const
+{
+	return DialogueRandoms.Find(RandomId);
+}
+
+void UDialogueObject::RemoveDialogueRandom(const int64 RandomId)
+{
+	DialogueRandoms.Remove(RandomId);
 }
 
 TArray<FDialogueInit>& UDialogueObject::GetDialogueInitData()

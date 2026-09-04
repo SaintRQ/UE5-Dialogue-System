@@ -41,6 +41,9 @@ private:
 	// Returns the icon color for an assigned text or response sound.
 	FSlateColor GetSoundIconColor(bool response, int32 entryIndex) const;
 
+	// Returns the text timing icon color.
+	FSlateColor GetTextTimingIconColor(int32 TextIndex) const;
+
 	// Adds a root text entry.
 	FReply OnAddRootText();
 
@@ -70,6 +73,9 @@ private:
 
 	// Opens sound selection for a text or response entry.
 	FReply OnOpenSound(bool response, int32 entryIndex);
+
+	// Opens automatic transition settings for a text entry.
+	FReply OnOpenTextTiming(int32 TextIndex);
 
 	// Toggles whether a failed response remains visible.
 	FReply OnToggleResponseAlwaysVisible(int32 responseIndex);

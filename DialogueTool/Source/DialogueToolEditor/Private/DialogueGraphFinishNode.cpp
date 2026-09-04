@@ -4,6 +4,7 @@
 
 #include "DialogueLibraryObject.h"
 #include "EdGraph/EdGraph.h"
+#include "Monologue/MonologueObject.h"
 
 #define LOCTEXT_NAMESPACE "DialogueGraphFinishNode"
 
@@ -31,7 +32,9 @@ FText UDialogueGraphFinishNode::GetNodeTitle(ENodeTitleType::Type titleType) con
 {
 	return IsReturnNode()
 		? LOCTEXT("ReturnNodeTitle", "RETURN")
-		: LOCTEXT("NodeTitle", "FINISH DIALOGUE");
+		: IsMonologueNode()
+			? LOCTEXT("MonologueNodeTitle", "FINISH MONOLOGUE")
+			: LOCTEXT("NodeTitle", "FINISH DIALOGUE");
 }
 
 FText UDialogueGraphFinishNode::GetTooltipText() const
@@ -41,10 +44,14 @@ FText UDialogueGraphFinishNode::GetTooltipText() const
 			"ReturnNodeTooltip",
 			"Completes the current dialogue library and returns to the dialogue that entered it.\n"
 			"The Transit node then executes its Return actions and continues through its Return output.")
-		: LOCTEXT(
-			"NodeTooltip",
-			"Finishes the active root dialogue after all preceding actions have executed.\n"
-			"The dialogue manager updates the cache, clears playback state, and broadcasts the finish event.");
+		: IsMonologueNode()
+			? LOCTEXT(
+				"MonologueNodeTooltip",
+				"Finishes the active monologue after all preceding actions have executed.")
+			: LOCTEXT(
+				"NodeTooltip",
+				"Finishes the active root dialogue after all preceding actions have executed.\n"
+				"The dialogue manager updates the cache, clears playback state, and broadcasts the finish event.");
 }
 
 UEdGraphPin* UDialogueGraphFinishNode::GetInputPin() const
@@ -55,6 +62,11 @@ UEdGraphPin* UDialogueGraphFinishNode::GetInputPin() const
 bool UDialogueGraphFinishNode::IsReturnNode() const
 {
 	return GetGraph() && GetGraph()->GetTypedOuter<UDialogueLibraryObject>();
+}
+
+bool UDialogueGraphFinishNode::IsMonologueNode() const
+{
+	return GetGraph() && UMonologueObject::IsMonologueAsset(GetGraph()->GetOuter());
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -71,6 +71,18 @@ public:
 	// Removes skip-text transition data by identifier.
 	void RemoveDialogueSkipText(int64 skipTextId);
 
+	// Adds a random flow node with the specified identifier.
+	FDialogueRandom& AddDialogueRandom(int64 RandomId);
+
+	// Finds mutable random flow data by identifier.
+	FDialogueRandom* FindDialogueRandom(int64 RandomId);
+
+	// Finds random flow data by identifier.
+	const FDialogueRandom* FindDialogueRandom(int64 RandomId) const;
+
+	// Removes random flow data by identifier.
+	void RemoveDialogueRandom(int64 RandomId);
+
 	// Returns mutable dialogue initialization data.
 	TArray<FDialogueInit>& GetDialogueInitData();
 
@@ -104,6 +116,9 @@ private:
 
 	UPROPERTY()
 	TMap<int64, FDialogueSkipText> DialogueSkipTexts;
+
+	UPROPERTY()
+	TMap<int64, FDialogueRandom> DialogueRandoms;
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY()

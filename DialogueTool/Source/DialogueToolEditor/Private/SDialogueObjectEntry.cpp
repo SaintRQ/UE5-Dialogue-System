@@ -107,7 +107,66 @@ void SDialogueObjectEntry::Refresh()
 		}));
 		TSharedRef<SWidget> propertyWidget = propertyView.ToSharedRef();
 		const TSharedPtr<IPropertyHandle> propertyHandle = propertyView->GetPropertyHandle();
-		if (RichTextProperties && CastField<FTextProperty>(*property) && propertyHandle.IsValid())
+		const FObjectProperty* objectProperty = CastField<FObjectProperty>(*property);
+		if (objectProperty && property->HasAnyPropertyFlags(CPF_InstancedReference) && propertyHandle.IsValid())
+		{
+			PropertyViews.Add(propertyView);
+			const TWeakObjectPtr<UObject> weakOwner = object;
+			const UClass* propertyClass = objectProperty->PropertyClass;
+			propertyWidget = SNew(SHorizontalBox)
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.VAlign(VAlign_Center)
+				[
+					propertyHandle->CreatePropertyNameWidget()
+				]
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.VAlign(VAlign_Center)
+				.Padding(4.0f, 0.0f, 0.0f, 0.0f)
+				[
+					SNew(SDialogueObjectEntry)
+					.BaseClass(propertyClass)
+					.Object_Lambda([weakOwner, objectProperty]() -> UObject*
+					{
+						const UObject* owner = weakOwner.Get();
+						return owner ? objectProperty->GetObjectPropertyValue_InContainer(owner) : nullptr;
+					})
+					.OnSetClass(FOnSetDialogueObjectClass::CreateLambda(
+						[weakOwner, propertyHandle, objectProperty, propertyClass](const UClass* selectedClass)
+						{
+							UObject* owner = weakOwner.Get();
+							if (!owner || (selectedClass && !selectedClass->IsChildOf(propertyClass)))
+							{
+								return;
+							}
+
+							UObject* currentValue = objectProperty->GetObjectPropertyValue_InContainer(owner);
+							if ((!selectedClass && !currentValue)
+								|| (selectedClass && currentValue && currentValue->GetClass() == selectedClass))
+							{
+								return;
+							}
+
+							owner->Modify();
+							UObject* value = selectedClass
+								? NewObject<UObject>(
+									owner,
+									const_cast<UClass*>(selectedClass),
+									NAME_None,
+									RF_Transactional)
+								: nullptr;
+							propertyHandle->NotifyPreChange();
+							objectProperty->SetObjectPropertyValue_InContainer(owner, value);
+							propertyHandle->NotifyPostChange(EPropertyChangeType::ValueSet);
+							propertyHandle->NotifyFinishedChangingProperties();
+							owner->MarkPackageDirty();
+						}))
+				];
+		}
+		else if (RichTextProperties && CastField<FTextProperty>(*property) && propertyHandle.IsValid())
 		{
 			PropertyViews.Add(propertyView);
 			FText propertyText;

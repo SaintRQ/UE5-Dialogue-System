@@ -26,6 +26,7 @@ public class DialogueToolEditor : ModuleRules
 			"ApplicationCore",
 			"AssetRegistry",
 			"AssetTools",
+			"InputCore",
 			"PropertyEditor"
 		});
 	}

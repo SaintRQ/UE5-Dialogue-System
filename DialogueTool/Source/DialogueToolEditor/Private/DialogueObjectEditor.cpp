@@ -5,6 +5,7 @@
 #include "DialogueGraphInitNode.h"
 #include "DialogueGraphLibrarySchema.h"
 #include "DialogueGraphNode.h"
+#include "DialogueGraphRandomNode.h"
 #include "DialogueGraphSchema.h"
 #include "DialogueGraphSkipTextNode.h"
 #include "DialogueGraphSwitcherNode.h"
@@ -23,6 +24,7 @@
 #include "GraphEditorActions.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "IDetailsView.h"
+#include "Monologue/MonologueObject.h"
 #include "Modules/ModuleManager.h"
 #include "PropertyEditorModule.h"
 #include "ScopedTransaction.h"
@@ -44,6 +46,7 @@ void FDialogueObjectEditor::InitDialogueObjectEditor(
 	GEditor->RegisterForUndo(this);
 	UEdGraph* graph = objectToEdit->GetEditorGraph();
 	const bool bLibrary = objectToEdit->IsA<UDialogueLibraryObject>();
+	const bool bMonologue = UMonologueObject::IsMonologueAsset(objectToEdit);
 	UClass* graphSchemaClass = bLibrary
 		? UDialogueGraphLibrarySchema::StaticClass()
 		: UDialogueGraphSchema::StaticClass();
@@ -121,9 +124,13 @@ void FDialogueObjectEditor::InitDialogueObjectEditor(
 		FExecuteAction::CreateSP(this, &FDialogueObjectEditor::CreateComment));
 
 	FGraphAppearanceInfo appearance;
-	appearance.CornerText = bLibrary
-		? LOCTEXT("LibraryCornerText", "Dialogue Library")
-		: LOCTEXT("CornerText", "Dialogue Tool");
+	appearance.CornerText = bMonologue
+		? bLibrary
+			? LOCTEXT("MonologueLibraryCornerText", "Monologue Library")
+			: LOCTEXT("MonologueCornerText", "Monologue Tool")
+		: bLibrary
+			? LOCTEXT("LibraryCornerText", "Dialogue Library")
+			: LOCTEXT("CornerText", "Dialogue Tool");
 	FDetailsViewArgs detailsViewArgs;
 	detailsViewArgs.bHideSelectionTip = true;
 	detailsViewArgs.NameAreaSettings = FDetailsViewArgs::HideNameArea;
@@ -186,16 +193,28 @@ FName FDialogueObjectEditor::GetToolkitFName() const
 
 FText FDialogueObjectEditor::GetBaseToolkitName() const
 {
-	return DialogueObject.IsValid() && DialogueObject->IsA<UDialogueLibraryObject>()
-		? LOCTEXT("LibraryEditorName", "Dialogue Library Editor")
-		: LOCTEXT("EditorName", "Dialogue Editor");
+	const UDialogueObject* dialogueObject = DialogueObject.Get();
+	const bool bLibrary = dialogueObject && dialogueObject->IsA<UDialogueLibraryObject>();
+	return UMonologueObject::IsMonologueAsset(dialogueObject)
+		? bLibrary
+			? LOCTEXT("MonologueLibraryEditorName", "Monologue Library Editor")
+			: LOCTEXT("MonologueEditorName", "Monologue Editor")
+		: bLibrary
+			? LOCTEXT("LibraryEditorName", "Dialogue Library Editor")
+			: LOCTEXT("EditorName", "Dialogue Editor");
 }
 
 FString FDialogueObjectEditor::GetWorldCentricTabPrefix() const
 {
-	return DialogueObject.IsValid() && DialogueObject->IsA<UDialogueLibraryObject>()
-		? LOCTEXT("LibraryWorldCentricPrefix", "Dialogue Library ").ToString()
-		: LOCTEXT("WorldCentricPrefix", "Dialogue ").ToString();
+	const UDialogueObject* dialogueObject = DialogueObject.Get();
+	const bool bLibrary = dialogueObject && dialogueObject->IsA<UDialogueLibraryObject>();
+	return UMonologueObject::IsMonologueAsset(dialogueObject)
+		? bLibrary
+			? LOCTEXT("MonologueLibraryWorldCentricPrefix", "Monologue Library ").ToString()
+			: LOCTEXT("MonologueWorldCentricPrefix", "Monologue ").ToString()
+		: bLibrary
+			? LOCTEXT("LibraryWorldCentricPrefix", "Dialogue Library ").ToString()
+			: LOCTEXT("WorldCentricPrefix", "Dialogue ").ToString();
 }
 
 FLinearColor FDialogueObjectEditor::GetWorldCentricTabColorScale() const
@@ -205,17 +224,27 @@ FLinearColor FDialogueObjectEditor::GetWorldCentricTabColorScale() const
 
 void FDialogueObjectEditor::RegisterTabSpawners(const TSharedRef<FTabManager>& tabManager)
 {
-	const bool bLibrary = DialogueObject.IsValid() && DialogueObject->IsA<UDialogueLibraryObject>();
+	const UDialogueObject* dialogueObject = DialogueObject.Get();
+	const bool bLibrary = dialogueObject && dialogueObject->IsA<UDialogueLibraryObject>();
+	const bool bMonologue = UMonologueObject::IsMonologueAsset(dialogueObject);
 	WorkspaceMenuCategory = tabManager->AddLocalWorkspaceMenuCategory(
-		bLibrary
-			? LOCTEXT("LibraryWorkspaceCategory", "Dialogue Library Editor")
-			: LOCTEXT("WorkspaceCategory", "Dialogue Editor"));
+		bMonologue
+			? bLibrary
+				? LOCTEXT("MonologueLibraryWorkspaceCategory", "Monologue Library Editor")
+				: LOCTEXT("MonologueWorkspaceCategory", "Monologue Editor")
+			: bLibrary
+				? LOCTEXT("LibraryWorkspaceCategory", "Dialogue Library Editor")
+				: LOCTEXT("WorkspaceCategory", "Dialogue Editor"));
 	FAssetEditorToolkit::RegisterTabSpawners(tabManager);
 
 	tabManager->RegisterTabSpawner(GraphTabId, FOnSpawnTab::CreateSP(this, &FDialogueObjectEditor::SpawnGraphTab))
-		.SetDisplayName(bLibrary
-			? LOCTEXT("LibraryGraphTab", "Library Graph")
-			: LOCTEXT("GraphTab", "Dialogue Graph"))
+		.SetDisplayName(bMonologue
+			? bLibrary
+				? LOCTEXT("MonologueLibraryGraphTab", "Monologue Library Graph")
+				: LOCTEXT("MonologueGraphTab", "Monologue Graph")
+			: bLibrary
+				? LOCTEXT("LibraryGraphTab", "Library Graph")
+				: LOCTEXT("GraphTab", "Dialogue Graph"))
 		.SetGroup(WorkspaceMenuCategory.ToSharedRef())
 		.SetIcon(FSlateIcon(FAppStyle::GetAppStyleSetName(), "GraphEditor.EventGraph_16x"));
 
@@ -252,11 +281,18 @@ void FDialogueObjectEditor::PostRedo(bool bSuccess)
 TSharedRef<SDockTab> FDialogueObjectEditor::SpawnGraphTab(const FSpawnTabArgs& arguments)
 {
 	check(arguments.GetTabId() == GraphTabId);
+	const UDialogueObject* dialogueObject = DialogueObject.Get();
+	const bool bLibrary = dialogueObject && dialogueObject->IsA<UDialogueLibraryObject>();
+	const bool bMonologue = UMonologueObject::IsMonologueAsset(dialogueObject);
 
 	return SNew(SDockTab)
-		.Label(DialogueObject.IsValid() && DialogueObject->IsA<UDialogueLibraryObject>()
-			? LOCTEXT("LibraryGraphTab", "Library Graph")
-			: LOCTEXT("GraphTab", "Dialogue Graph"))
+		.Label(bMonologue
+			? bLibrary
+				? LOCTEXT("MonologueLibraryGraphTab", "Monologue Library Graph")
+				: LOCTEXT("MonologueGraphTab", "Monologue Graph")
+			: bLibrary
+				? LOCTEXT("LibraryGraphTab", "Library Graph")
+				: LOCTEXT("GraphTab", "Dialogue Graph"))
 		[
 			GraphEditor.ToSharedRef()
 		];
@@ -411,6 +447,10 @@ void FDialogueObjectEditor::CopySelectedNodes()
 		{
 			switcherNode->FinishCopying();
 		}
+		else if (UDialogueGraphRandomNode* randomNode = Cast<UDialogueGraphRandomNode>(selectedObject))
+		{
+			randomNode->FinishCopying();
+		}
 		else if (UDialogueGraphTransitNode* transitNode = Cast<UDialogueGraphTransitNode>(selectedObject))
 		{
 			transitNode->FinishCopying();
@@ -499,6 +539,10 @@ void FDialogueObjectEditor::PasteNodesHere(const FVector2f& location)
 		{
 			pastedNodeIds.Add(switcherNode->GetPastedFromSwitcherNodeId(), switcherNode->GetSwitcherNodeId());
 		}
+		else if (UDialogueGraphRandomNode* randomNode = Cast<UDialogueGraphRandomNode>(pastedNode))
+		{
+			pastedNodeIds.Add(randomNode->GetPastedFromRandomNodeId(), randomNode->GetRandomNodeId());
+		}
 		else if (UDialogueGraphTransitNode* transitNode = Cast<UDialogueGraphTransitNode>(pastedNode))
 		{
 			pastedNodeIds.Add(transitNode->GetPastedFromTransitNodeId(), transitNode->GetTransitNodeId());
@@ -526,6 +570,11 @@ void FDialogueObjectEditor::PasteNodesHere(const FVector2f& location)
 		{
 			switcherNode->RemapPastedConnections(pastedNodeIds);
 			switcherNode->NodeConnectionListChanged();
+		}
+		else if (UDialogueGraphRandomNode* randomNode = Cast<UDialogueGraphRandomNode>(pastedNode))
+		{
+			randomNode->RemapPastedConnections(pastedNodeIds);
+			randomNode->NodeConnectionListChanged();
 		}
 		else if (UDialogueGraphTransitNode* transitNode = Cast<UDialogueGraphTransitNode>(pastedNode))
 		{

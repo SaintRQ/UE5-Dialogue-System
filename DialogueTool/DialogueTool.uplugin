@@ -3,8 +3,8 @@
 	"Version": 1,
 	"VersionName": "1.0",
 	"FriendlyName": "Dialogue Tool",
-	"Description": "Dialogue system for Alay.",
-	"Category": "ALAY",
+	"Description": "Dialogue system.",
+	"Category": "Plugins",
 	"CanContainContent": true,
 	"Installed": false,
 	"Modules": [

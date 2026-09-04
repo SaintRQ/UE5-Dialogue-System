@@ -15,7 +15,7 @@ class DIALOGUETOOL_API UDialogueAction : public UObject
 
 public:
 
-	// Executes the action using the supplied context.
+	// Executes the action using the supplied ordered context.
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Dialogue Tool|Action")
-	void ExecuteAction(UObject* context);
+	void ExecuteAction(const TArray<UObject*>& Context);
 };

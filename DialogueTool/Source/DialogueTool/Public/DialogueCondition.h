@@ -14,7 +14,7 @@ class DIALOGUETOOL_API UDialogueCondition : public UObject
 
 public:
 
-	// Evaluates the condition using the supplied context.
+	// Evaluates the condition using the supplied ordered context.
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Dialogue Tool|Condition")
-	bool ExecuteCondition(UObject* context) const;
+	bool ExecuteCondition(const TArray<UObject*>& Context) const;
 };

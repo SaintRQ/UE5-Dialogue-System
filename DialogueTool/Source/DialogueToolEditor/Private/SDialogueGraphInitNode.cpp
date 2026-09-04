@@ -45,7 +45,8 @@ void SDialogueGraphInitNode::UpdateGraphNode()
 		&& initNode->GetGraph()->GetTypedOuter<UDialogueLibraryObject>();
 	const TArray<FDialogueInit>* initData = initNode ? initNode->GetInitData() : nullptr;
 	const int32 initCount = initData ? initData->Num() : 0;
-	const int32 addInitRow = initCount + 1;
+	const int32 conditionCount = FMath::Max(0, initCount - 1);
+	const int32 addInitRow = conditionCount + 1;
 	TSharedRef<SGridPanel> content = SNew(SGridPanel)
 		.FillColumn(0, 1.0f);
 
@@ -69,7 +70,7 @@ void SDialogueGraphInitNode::UpdateGraphNode()
 
 	if (initData)
 	{
-		for (int32 initIndex = 0; initIndex < initCount; ++initIndex)
+		for (int32 initIndex = 0; initIndex < conditionCount; ++initIndex)
 		{
 			TSharedRef<SHorizontalBox> initRow = SNew(SHorizontalBox);
 			initRow->AddSlot()
@@ -157,6 +158,28 @@ void SDialogueGraphInitNode::UpdateGraphNode()
 		.OnClicked(this, &SDialogueGraphInitNode::OnAddInit)
 	];
 
+	const int32 defaultRow = addInitRow + 1;
+	content->AddSlot(0, defaultRow, SGridPanel::Layer(1))
+	.HAlign(HAlign_Right)
+	.VAlign(VAlign_Center)
+	.Padding(10.0f, 6.0f, 8.0f, 8.0f)
+	[
+		SNew(STextBlock)
+		.Text(LOCTEXT("DefaultInit", "DEFAULT"))
+		.Font(FCoreStyle::GetDefaultFontStyle("Bold", 9))
+		.ColorAndOpacity(FLinearColor(0.42f, 0.68f, 1.0f))
+	];
+
+	if (initNode && initNode->GetDefaultOutputPin())
+	{
+		content->AddSlot(1, defaultRow, SGridPanel::Layer(1))
+		.VAlign(VAlign_Center)
+		.Padding(2.0f)
+		[
+			CreateInitPin(initNode->GetDefaultOutputPin())
+		];
+	}
+
 	ContentScale.Bind(this, &SGraphNode::GetContentScale);
 	GetOrAddSlot(ENodeZone::Center)
 	.HAlign(HAlign_Fill)
@@ -172,7 +195,11 @@ void SDialogueGraphInitNode::UpdateGraphNode()
 			.BorderBackgroundColor(FLinearColor(0.015f, 0.035f, 0.09f))
 			.Padding(0.0f)
 			[
-				content
+				SNew(SBox)
+				.MinDesiredWidth(360.0f)
+				[
+					content
+				]
 			]
 		]
 	];
@@ -269,6 +296,14 @@ FReply SDialogueGraphInitNode::OnOpenInitConditions(int32 initIndex)
 			const TArray<FDialogueInit>* data = node ? node->GetInitData() : nullptr;
 			return data && data->IsValidIndex(initIndex) ? (*data)[initIndex].Conditions.Num() : 0;
 		})
+		.ConditionMode_Lambda([weakNode, initIndex]()
+		{
+			const UDialogueGraphInitNode* node = weakNode.Get();
+			const TArray<FDialogueInit>* data = node ? node->GetInitData() : nullptr;
+			return data && data->IsValidIndex(initIndex)
+				? (*data)[initIndex].ConditionMode
+				: EDialogueConditionMode::All;
+		})
 		.OnGetCondition_Lambda([weakNode, initIndex](int32 conditionIndex) -> UDialogueCondition*
 		{
 			const UDialogueGraphInitNode* node = weakNode.Get();
@@ -300,6 +335,13 @@ FReply SDialogueGraphInitNode::OnOpenInitConditions(int32 initIndex)
 			if (UDialogueGraphInitNode* node = weakNode.Get())
 			{
 				node->RemoveInitCondition(initIndex, conditionIndex);
+			}
+		})
+		.OnSetConditionMode_Lambda([weakNode, initIndex](EDialogueConditionMode conditionMode)
+		{
+			if (UDialogueGraphInitNode* node = weakNode.Get())
+			{
+				node->SetInitConditionMode(initIndex, conditionMode);
 			}
 		}),
 		FSlateApplication::Get().GetCursorPos(),

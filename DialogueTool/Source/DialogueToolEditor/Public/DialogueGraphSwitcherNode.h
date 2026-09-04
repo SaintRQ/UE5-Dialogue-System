@@ -60,6 +60,9 @@ public:
 	// Returns the output pin for a switcher condition.
 	UEdGraphPin* GetConditionOutputPin(int32 conditionIndex) const;
 
+	// Returns the required unconditional switcher output pin.
+	UEdGraphPin* GetDefaultOutputPin() const;
+
 	// Returns the compact runtime identifier represented by this graph node.
 	int64 GetSwitcherNodeId() const;
 
@@ -89,6 +92,9 @@ public:
 
 	// Changes a switcher condition requirement class.
 	void SetConditionRequirementClass(int32 conditionIndex, int32 requirementIndex, const UClass* conditionClass);
+
+	// Changes how switcher requirements are combined.
+	void SetConditionMode(int32 ConditionIndex, EDialogueConditionMode ConditionMode);
 
 	// Synchronizes every switcher output with runtime data.
 	void RefreshOutputConnections();

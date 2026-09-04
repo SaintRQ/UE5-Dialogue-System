@@ -4,6 +4,7 @@
 
 #include "DialogueGraphInitNode.h"
 #include "DialogueGraphNode.h"
+#include "DialogueGraphRandomNode.h"
 #include "DialogueGraphSwitcherNode.h"
 #include "DialogueGraphTransitNode.h"
 #include "DialogueGraphUtilities.h"
@@ -241,6 +242,10 @@ void UDialogueGraphSkipTextNode::RefreshSourceNodes() const
 			else if (UDialogueGraphSwitcherNode* switcherNode = Cast<UDialogueGraphSwitcherNode>(node))
 			{
 				switcherNode->RefreshOutputConnections();
+			}
+			else if (UDialogueGraphRandomNode* randomNode = Cast<UDialogueGraphRandomNode>(node))
+			{
+				randomNode->RefreshOutputConnections();
 			}
 			else if (UDialogueGraphTransitNode* transitNode = Cast<UDialogueGraphTransitNode>(node))
 			{

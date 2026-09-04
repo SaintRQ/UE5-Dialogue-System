@@ -44,7 +44,8 @@ void SDialogueGraphSwitcherNode::UpdateGraphNode()
 
 	UDialogueGraphSwitcherNode* switcherNode = GetSwitcherNode();
 	const FDialogueSwitcher* switcherData = switcherNode ? switcherNode->GetSwitcherData() : nullptr;
-	const int32 conditionCount = switcherData ? switcherData->Conditions.Num() : 0;
+	const int32 entryCount = switcherData ? switcherData->Conditions.Num() : 0;
+	const int32 conditionCount = FMath::Max(0, entryCount - 1);
 	TSharedRef<SGridPanel> content = SNew(SGridPanel)
 		.FillColumn(0, 1.0f);
 
@@ -136,6 +137,28 @@ void SDialogueGraphSwitcherNode::UpdateGraphNode()
 		.Color(FLinearColor(0.56f, 0.12f, 0.92f, 0.5f))
 		.OnClicked(this, &SDialogueGraphSwitcherNode::OnAddCondition)
 	];
+
+	const int32 defaultRow = conditionCount + 2;
+	content->AddSlot(0, defaultRow, SGridPanel::Layer(1))
+	.HAlign(HAlign_Right)
+	.VAlign(VAlign_Center)
+	.Padding(10.0f, 6.0f, 8.0f, 8.0f)
+	[
+		SNew(STextBlock)
+		.Text(LOCTEXT("DefaultCondition", "DEFAULT"))
+		.Font(FCoreStyle::GetDefaultFontStyle("Bold", 9))
+		.ColorAndOpacity(FLinearColor(0.7f, 0.56f, 0.82f))
+	];
+
+	if (switcherNode && switcherNode->GetDefaultOutputPin())
+	{
+		content->AddSlot(1, defaultRow, SGridPanel::Layer(1))
+		.VAlign(VAlign_Center)
+		.Padding(2.0f)
+		[
+			CreateSwitcherPin(switcherNode->GetDefaultOutputPin())
+		];
+	}
 
 	TSharedRef<SWidget> inputWidget = SNullWidget::NullWidget;
 	if (switcherNode && switcherNode->GetInputPin())
@@ -286,6 +309,14 @@ FReply SDialogueGraphSwitcherNode::OnOpenConditions(int32 conditionIndex)
 				? data->Conditions[conditionIndex].Conditions.Num()
 				: 0;
 		})
+		.ConditionMode_Lambda([weakNode, conditionIndex]()
+		{
+			const UDialogueGraphSwitcherNode* node = weakNode.Get();
+			const FDialogueSwitcher* data = node ? node->GetSwitcherData() : nullptr;
+			return data && data->Conditions.IsValidIndex(conditionIndex)
+				? data->Conditions[conditionIndex].ConditionMode
+				: EDialogueConditionMode::All;
+		})
 		.OnGetCondition_Lambda([weakNode, conditionIndex](int32 requirementIndex) -> UDialogueCondition*
 		{
 			const UDialogueGraphSwitcherNode* node = weakNode.Get();
@@ -318,6 +349,13 @@ FReply SDialogueGraphSwitcherNode::OnOpenConditions(int32 conditionIndex)
 			if (UDialogueGraphSwitcherNode* node = weakNode.Get())
 			{
 				node->RemoveConditionRequirement(conditionIndex, requirementIndex);
+			}
+		})
+		.OnSetConditionMode_Lambda([weakNode, conditionIndex](EDialogueConditionMode conditionMode)
+		{
+			if (UDialogueGraphSwitcherNode* node = weakNode.Get())
+			{
+				node->SetConditionMode(conditionIndex, conditionMode);
 			}
 		}),
 		FSlateApplication::Get().GetCursorPos(),

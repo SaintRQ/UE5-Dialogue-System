@@ -84,6 +84,9 @@ public:
 	// Returns the source identifier captured during clipboard import.
 	int64 GetPastedFromDialogueNodeId() const;
 
+	// Changes the context role used as this node's pseudo-speaker.
+	void SetRole(int32 Role);
+
 	// Clears temporary clipboard data after export.
 	void FinishCopying();
 
@@ -101,6 +104,12 @@ public:
 
 	// Changes the sound assigned to a root text entry.
 	void SetRootSound(int32 textIndex, const TSoftObjectPtr<USoundBase>& sound);
+
+	// Changes whether a text entry overrides plugin auto-continue settings.
+	void SetTextTimingEnabled(int32 TextIndex, bool Enabled);
+
+	// Changes the automatic transition delay for a text entry.
+	void SetTextDelay(int32 TextIndex, float Delay);
 
 	// Adds an empty response or a custom response for the specified text identifier.
 	void AddResponse(FName customTextId = NAME_None);
@@ -128,6 +137,9 @@ public:
 
 	// Changes a response condition class.
 	void SetResponseConditionClass(int32 responseIndex, int32 conditionIndex, const UClass* conditionClass);
+
+	// Changes how response conditions are combined.
+	void SetResponseConditionMode(int32 ResponseIndex, EDialogueConditionMode ConditionMode);
 
 	// Synchronizes provider classes for every text and response input pin.
 	void RefreshProviders();

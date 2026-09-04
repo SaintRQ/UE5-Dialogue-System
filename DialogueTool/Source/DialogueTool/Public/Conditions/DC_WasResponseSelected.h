@@ -15,5 +15,5 @@ class DIALOGUETOOL_API UDC_WasResponseSelected final : public UDialogueCondition
 public:
 
 	// Checks the selection memory of the response containing this condition.
-	virtual bool ExecuteCondition_Implementation(UObject* context) const override;
+	virtual bool ExecuteCondition_Implementation(const TArray<UObject*>& Context) const override;
 };

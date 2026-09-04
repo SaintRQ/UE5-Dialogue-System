@@ -5,6 +5,7 @@
 #include "DialogueGraphActionNode.h"
 #include "DialogueGraphFinishNode.h"
 #include "DialogueGraphNode.h"
+#include "DialogueGraphRandomNode.h"
 #include "DialogueGraphRerouteNode.h"
 #include "DialogueGraphResponseProviderNode.h"
 #include "DialogueGraphSkipTextNode.h"
@@ -15,6 +16,7 @@
 #include "DialogueObject.h"
 #include "ConnectionDrawingPolicy.h"
 #include "EdGraph/EdGraph.h"
+#include "Monologue/MonologueObject.h"
 #include "ScopedTransaction.h"
 
 #define LOCTEXT_NAMESPACE "DialogueGraphSchema"
@@ -56,6 +58,10 @@ namespace
 				params.WireColor = FLinearColor(0.04f, 0.48f, 0.78f);
 				params.WireThickness = 2.0f;
 				params.bUserFlag1 = true;
+			}
+			if (!HoveredPins.IsEmpty())
+			{
+				ApplyHoverDeemphasis(outputPin, inputPin, params.WireThickness, params.WireColor);
 			}
 			if (UDialogueGraphRerouteNode* outputReroute = Cast<UDialogueGraphRerouteNode>(outputPin->GetOwningNode());
 				outputReroute && ShouldReverseTangent(outputReroute))
@@ -173,6 +179,8 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 {
 	const bool bLibraryGraph = contextMenuBuilder.CurrentGraph
 		&& contextMenuBuilder.CurrentGraph->GetTypedOuter<UDialogueLibraryObject>();
+	const bool bMonologueGraph = contextMenuBuilder.CurrentGraph
+		&& UMonologueObject::IsMonologueAsset(contextMenuBuilder.CurrentGraph->GetOuter());
 	const auto addResponseProviderAction = [&contextMenuBuilder]()
 	{
 		const TSharedRef<FEdGraphSchemaAction_NewNode> providerAction = MakeShared<FEdGraphSchemaAction_NewNode>(
@@ -198,8 +206,13 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 		transitAction->NodeTemplate = NewObject<UDialogueGraphTransitNode>();
 		contextMenuBuilder.AddAction(transitAction);
 	};
-	const auto addSkipTextAction = [&contextMenuBuilder]()
+	const auto addSkipTextAction = [&contextMenuBuilder, bMonologueGraph]()
 	{
+		if (bMonologueGraph)
+		{
+			return;
+		}
+
 		const TSharedRef<FEdGraphSchemaAction_NewNode> skipTextAction = MakeShared<FEdGraphSchemaAction_NewNode>(
 			FText::GetEmpty(),
 			LOCTEXT("AddSkipTextNode", "Add Skip Text"),
@@ -209,6 +222,16 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 			0);
 		skipTextAction->NodeTemplate = NewObject<UDialogueGraphSkipTextNode>();
 		contextMenuBuilder.AddAction(skipTextAction);
+	};
+	const auto addRandomAction = [&contextMenuBuilder]()
+	{
+		const TSharedRef<FEdGraphSchemaAction_NewNode> randomAction = MakeShared<FEdGraphSchemaAction_NewNode>(
+			FText::GetEmpty(),
+			LOCTEXT("AddRandomNode", "Add Random"),
+			LOCTEXT("AddRandomNodeTooltip", "Randomly selects one of its outgoing dialogue branches."),
+			0);
+		randomAction->NodeTemplate = NewObject<UDialogueGraphRandomNode>();
+		contextMenuBuilder.AddAction(randomAction);
 	};
 
 	if (contextMenuBuilder.FromPin)
@@ -228,8 +251,12 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 		{
 			const TSharedRef<FEdGraphSchemaAction_NewNode> topicAction = MakeShared<FEdGraphSchemaAction_NewNode>(
 				FText::GetEmpty(),
-				LOCTEXT("AddTopicNodeFromPin", "Add Topic"),
-				LOCTEXT("AddTopicNodeFromPinTooltip", "Adds and connects a dialogue topic."),
+				bMonologueGraph
+					? LOCTEXT("AddMonologueNodeFromPin", "Add Monologue")
+					: LOCTEXT("AddTopicNodeFromPin", "Add Topic"),
+				bMonologueGraph
+					? LOCTEXT("AddMonologueNodeFromPinTooltip", "Adds and connects a monologue text node.")
+					: LOCTEXT("AddTopicNodeFromPinTooltip", "Adds and connects a dialogue topic."),
 				0);
 			topicAction->NodeTemplate = NewObject<UDialogueGraphNode>();
 			contextMenuBuilder.AddAction(topicAction);
@@ -252,6 +279,7 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 				0);
 			switcherAction->NodeTemplate = NewObject<UDialogueGraphSwitcherNode>();
 			contextMenuBuilder.AddAction(switcherAction);
+			addRandomAction();
 
 			addSkipTextAction();
 			addTransitAction();
@@ -263,10 +291,16 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 				FText::GetEmpty(),
 				bLibraryGraph
 					? LOCTEXT("AddReturnNodeFromPin", "Add Return")
-					: LOCTEXT("AddFinishNodeFromPin", "Add Finish Dialogue"),
+					: bMonologueGraph
+						? LOCTEXT("AddFinishMonologueNodeFromPin", "Add Finish Monologue")
+						: LOCTEXT("AddFinishNodeFromPin", "Add Finish Dialogue"),
 				bLibraryGraph
 					? LOCTEXT("AddReturnNodeFromPinTooltip", "Adds a node that returns to the calling dialogue.")
-					: LOCTEXT("AddFinishNodeFromPinTooltip", "Adds and connects a terminal dialogue node."),
+					: bMonologueGraph
+						? LOCTEXT(
+							"AddFinishMonologueNodeFromPinTooltip",
+							"Adds and connects a terminal monologue node.")
+						: LOCTEXT("AddFinishNodeFromPinTooltip", "Adds and connects a terminal dialogue node."),
 				0);
 			finishAction->NodeTemplate = NewObject<UDialogueGraphFinishNode>();
 			contextMenuBuilder.AddAction(finishAction);
@@ -284,8 +318,12 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 
 	const TSharedRef<FEdGraphSchemaAction_NewNode> topicAction = MakeShared<FEdGraphSchemaAction_NewNode>(
 		FText::GetEmpty(),
-		LOCTEXT("AddTopicNode", "Add Topic"),
-		LOCTEXT("AddTopicNodeTooltip", "Adds a dialogue topic to the graph."),
+		bMonologueGraph
+			? LOCTEXT("AddMonologueNode", "Add Monologue")
+			: LOCTEXT("AddTopicNode", "Add Topic"),
+		bMonologueGraph
+			? LOCTEXT("AddMonologueNodeTooltip", "Adds a monologue text node to the graph.")
+			: LOCTEXT("AddTopicNodeTooltip", "Adds a dialogue topic to the graph."),
 		0);
 	topicAction->NodeTemplate = NewObject<UDialogueGraphNode>();
 	contextMenuBuilder.AddAction(topicAction);
@@ -305,6 +343,7 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 		0);
 	switcherAction->NodeTemplate = NewObject<UDialogueGraphSwitcherNode>();
 	contextMenuBuilder.AddAction(switcherAction);
+	addRandomAction();
 
 	addSkipTextAction();
 	addTransitAction();
@@ -314,10 +353,14 @@ void UDialogueGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& cont
 		FText::GetEmpty(),
 		bLibraryGraph
 			? LOCTEXT("AddReturnNode", "Add Return")
-			: LOCTEXT("AddFinishNode", "Add Finish Dialogue"),
+			: bMonologueGraph
+				? LOCTEXT("AddFinishMonologueNode", "Add Finish Monologue")
+				: LOCTEXT("AddFinishNode", "Add Finish Dialogue"),
 		bLibraryGraph
 			? LOCTEXT("AddReturnNodeTooltip", "Adds a terminal node that returns to the calling dialogue.")
-			: LOCTEXT("AddFinishNodeTooltip", "Adds a terminal node that finishes dialogue playback."),
+			: bMonologueGraph
+				? LOCTEXT("AddFinishMonologueNodeTooltip", "Adds a terminal node that finishes monologue playback.")
+				: LOCTEXT("AddFinishNodeTooltip", "Adds a terminal node that finishes dialogue playback."),
 		0);
 	finishAction->NodeTemplate = NewObject<UDialogueGraphFinishNode>();
 	contextMenuBuilder.AddAction(finishAction);

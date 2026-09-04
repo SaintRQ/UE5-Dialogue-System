@@ -47,6 +47,7 @@ The current version is developed and verified with **Unreal Engine 5.6**. The No
 
 - отдельные ассеты `Dialogue Object` для полноценных диалогов;
 - отдельные ассеты `Dialogue Library` для переиспользуемых фрагментов;
+- локальные `Monologue Object` и `Monologue Library`, проигрываемые компонентом на Actor;
 - визуальный граф с темами, ответами, ветвлениями, действиями и терминальными узлами;
 - несколько точек старта с условиями;
 - условия для точки старта, веток `SWITCH` и ответов игрока;
@@ -157,6 +158,12 @@ ResponseReturnDialogueText=Return
 - `Add Finish` заменён на `Add Return`;
 - узел `TRANSIT` недоступен, поэтому библиотеки не вкладываются друг в друга.
 
+### Monologue Object / Monologue Library
+
+Линейные варианты без ответов игрока. `Monologue Object` запускается локальным `Monologue Component`, а `Monologue Library` вызывается через `TRANSIT`. В ноде `MONOLOGUE` выбирается индекс роли из массива `Speakers`, переданного в `StartMonologue`, и при необходимости задаётся собственная задержка перехода для каждой строки.
+
+Создание: `Content Browser > Add > Dialogue Tool > Monologue`.
+
 ### Dialogue Condition
 
 Blueprint-класс, унаследованный от `UDialogueCondition`. Возвращает `true` или `false` и используется в стартах, ответах и `SWITCH`.
@@ -182,11 +189,13 @@ Blueprint-класс, унаследованный от `UDialogueAction`. Вы�
 
 Каждый выход может иметь только одно соединение. Подключение нового узла к уже занятому выходу заменяет старое соединение.
 
-### DIALOGUE START / LIBRARY START
+### DIALOGUE START / LIBRARY START / MONOLOGUE START
 
 <img width="498" height="322" alt="start" src="https://github.com/user-attachments/assets/0e199b17-6836-4c89-847b-2e458b1bfbfd" />
 
 Обязательный и неудаляемый стартовый узел. При первом открытии создаётся запись `Default`.
+
+**Когда полезно:** для выбора начальной ветки по состоянию мира, например отдельного приветствия при первом и повторном разговоре.
 
 Каждая запись содержит:
 
@@ -204,11 +213,15 @@ Blueprint-класс, унаследованный от `UDialogueAction`. Вы�
 
 Кнопка `Add` создаёт ещё одну точку старта. Минимум одна запись должна оставаться в узле.
 
-### TOPIC
+### TOPIC / MONOLOGUE
 
 <img width="591" height="384" alt="topicк" src="https://github.com/user-attachments/assets/1bb8197e-4f2b-4c57-8950-5117e7fdf766" />
 
 Основной узел диалога. Содержит секции `Text` и `Response`.
+
+**Когда полезно:** для реплик NPC, последовательности фраз и вариантов ответа игрока.
+
+В монологовом ассете узел называется `MONOLOGUE`: секции ответов у него нет, поле `Role` выбирает объект из массива `Speakers`, а кнопка времени у строки позволяет включить собственную задержку автоперехода. Он полезен для реплик над персонажами, радио, субтитров и фоновых разговоров без остановки общего `Dialogue Manager`.
 
 `Text` — последовательность реплик. Они выводятся сверху вниз. Кнопка `ContinueDialogue`:
 
@@ -225,7 +238,7 @@ Blueprint-класс, унаследованный от `UDialogueAction`. Вы�
 Кнопки ответа:
 
 - синяя `Add` - добавить обычный ответ;
-- зеленая `Add Custim` - добавить ответ из заготовленной библиотеки. В настройках плагина - `ResponseCustomTextList`.
+- зеленая `Add Custom` — добавить ответ из заготовленной библиотеки. Список задаётся в `Response Custom Text List` в настройках плагина;
 - красная `Add Finish` - добавить ответ, завершающий диалог;
 - в библиотеке красная кнопка называется `Add Return` и возвращает управление вызывающему диалогу;
 - кнопка с `?` — открыть список условий ответа;
@@ -246,6 +259,8 @@ Blueprint-класс, унаследованный от `UDialogueAction`. Вы�
 
 Узел выполняет список классов `UDialogueAction` в порядке сверху вниз. Его следует ставить внутрь соединения:
 
+**Когда полезно:** чтобы между репликами выдать предмет, изменить переменную, запустить квест или выполнить другую игровую логику.
+
 ```text
 TOPIC ──► ACTIONS ──► TOPIC
 ```
@@ -260,6 +275,8 @@ TOPIC ──► ACTIONS ──► TOPIC
 
 Условное ветвление. В узле всегда есть минимум две ветки.
 
+**Когда полезно:** когда продолжение зависит от условия — выполненного квеста, репутации, предмета или другого состояния игры.
+
 - ветки проверяются сверху вниз;
 - в одной ветке все условия объединяются через логическое **AND**;
 - выбирается первая ветка, у которой прошли все условия;
@@ -269,11 +286,27 @@ TOPIC ──► ACTIONS ──► TOPIC
 
 Название ветки — только подпись в редакторе. Кнопка `?` открывает условия, `Add` добавляет ветку, `-` удаляет её. Для предсказуемого результата оставляйте безусловную ветку последней.
 
+### RANDOM
+
+Случайно выбирает один из выходов с равной вероятностью. В узле всегда остаётся минимум два выхода; система по возможности не повторяет результат предыдущего прохода.
+
+**Когда полезно:** для случайной реплики, реакции или небольшого разнообразия при повторных разговорах.
+
+### SKIP TEXT
+
+Сохраняет на экране текст текущего `TOPIC` и сразу показывает ответы следующего `TOPIC`, не проигрывая его текст, провайдеры и звуки. Следующий топик всё равно отмечается посещённым. Если ответов у него нет, он открывается обычным способом, чтобы поток не остановился.
+
+Узел недоступен в монологовых ассетах.
+
+**Когда полезно:** когда вопрос и варианты ответа должны визуально восприниматься как один экран, хотя ответы хранятся в отдельном топике.
+
 ### TRANSIT
 
 <img width="1032" height="505" alt="transit" src="https://github.com/user-attachments/assets/ee3676d7-0273-4f25-bb9a-3a436b87bf15" />
 
 Вызывает `Dialogue Library`. Узел доступен только в обычном `Dialogue Object`.
+
+**Когда полезно:** для повторно используемых фрагментов — приветствия торговца, обучения, проверки репутации или общего прощания.
 
 1. Добавьте `TRANSIT`.
 2. Выберите ассет библиотеки в поле узла.
@@ -288,20 +321,31 @@ TOPIC ──► ACTIONS ──► TOPIC
 
 <img width="1060" height="387" alt="provider" src="https://github.com/user-attachments/assets/3bc42cf6-4de5-4071-9a24-e07e34cda338" />
 
-Вызывает `Dialogue Provider`. Узел доступен только для текста и ответов внутри ноды `Topic`.
+Вызывает `Dialogue Provider`. Узел подключается к тексту и ответам внутри `TOPIC`, а в монологовом ассете — к тексту `MONOLOGUE`.
 
 Позволяет динамически изменять текст внутри как топика, так и ответа.
 
-### FINISH DIALOGUE / RETURN
+**Когда полезно:** для подстановки имени игрока, цены, количества предметов и других значений, известных только во время игры.
+
+### FINISH DIALOGUE / RETURN / FINISH MONOLOGUE
 
 <img width="970" height="531" alt="finish" src="https://github.com/user-attachments/assets/8274bf87-5268-4c5a-b13d-0e4154ef721c" />
 
 Терминальный узел без выбора ответа:
 
+**Когда полезно:** для автоматического завершения разговора или возврата из библиотеки после реплики, ветки либо действий.
+
 - `FINISH DIALOGUE` завершает обычный диалог;
+- `FINISH MONOLOGUE` завершает локальное проигрывание монолога;
 - `RETURN` завершает библиотеку и возвращает управление в `TRANSIT`.
 
 Используйте этот узел, когда диалог должен завершиться автоматически после темы, ветки или действий. Используйте `Add Finish` / `Add Return`, когда игрок должен явно выбрать терминальный ответ.
+
+### REROUTE
+
+Перенаправляет провод, не меняя runtime-логику. Его можно добавить из контекстного меню провода или двойным кликом по соединению.
+
+**Когда полезно:** для аккуратной раскладки больших графов и уменьшения пересечений проводов.
 
 ### Комментарии и редактирование графа
 
@@ -422,6 +466,10 @@ This is <Important>important</> text.
 ## Подключение игрового UI в Blueprint
 
 Плагин намеренно не создаёт готовый виджет. `Dialogue Manager` сообщает состояние через события, а проект решает, как его показать.
+
+Коротко: создайте свой `User Widget` с `RichTextBlock`, контейнером ответов и кнопкой продолжения; после создания виджета подпишите его на события менеджера, запускайте диалог через `Start Dialogue`, а клики передавайте в `Continue Dialogue` и `Select Response`.
+
+Для монолога добавьте `Monologue Component` на нужный Actor, подпишите UI на `On Update Role`, `On Update Text`, `On Play Sound` и `On Monologue Finished`, затем вызовите `Start Monologue`. Ответы и общий `Dialogue Manager` для этого не нужны.
 
 ### 1. Получите менеджер
 
@@ -732,6 +780,7 @@ ID топиков и ответов создаются и мигрируются
 
 - separate `Dialogue Object` assets for complete dialogues;
 - separate `Dialogue Library` assets for reusable fragments;
+- local `Monologue Object` and `Monologue Library` assets played by an Actor component;
 - a visual graph with topics, responses, branches, actions, and terminal nodes;
 - multiple conditional start points;
 - conditions for start points, `SWITCH` branches, and player responses;
@@ -842,6 +891,12 @@ Inside a library:
 - `Add Finish` is replaced with `Add Return`;
 - the `TRANSIT` node is unavailable, so libraries cannot be nested inside other libraries.
 
+### Monologue Object / Monologue Library
+
+Linear variants without player responses. A `Monologue Object` is played locally by a `Monologue Component`, while a `Monologue Library` is called through `TRANSIT`. A `MONOLOGUE` node selects a role index from the `Speakers` array passed to `StartMonologue` and can define a per-line transition delay.
+
+Create via: `Content Browser > Add > Dialogue Tool > Monologue`.
+
 ### Dialogue Condition
 
 A Blueprint class derived from `UDialogueCondition`. It returns `true` or `false` and can be used by starts, responses, and `SWITCH` branches.
@@ -866,11 +921,13 @@ The context menu opens by right-clicking empty graph space. An even faster optio
 
 Each output can have only one connection. Connecting a new node to an already occupied output replaces the previous connection.
 
-### DIALOGUE START / LIBRARY START
+### DIALOGUE START / LIBRARY START / MONOLOGUE START
 
 <img width="498" height="322" alt="start" src="https://github.com/user-attachments/assets/0e199b17-6836-4c89-847b-2e458b1bfbfd" />
 
 A required, non-removable start node. The `Default` entry is created automatically when the asset is opened for the first time.
+
+**Useful when:** the opening branch depends on world state, such as first-time and repeat greetings.
 
 Each entry contains:
 
@@ -888,11 +945,15 @@ Recommended order:
 
 The `Add` button creates another start point. At least one entry must remain in the node.
 
-### TOPIC
+### TOPIC / MONOLOGUE
 
 <img width="591" height="384" alt="topicк" src="https://github.com/user-attachments/assets/1bb8197e-4f2b-4c57-8950-5117e7fdf766" />
 
 The main dialogue node. It contains `Text` and `Response` sections.
+
+**Useful when:** you need NPC lines, a sequence of phrases, or player response choices.
+
+In a monologue asset the node is named `MONOLOGUE`: it has no response section, `Role` selects an object from the `Speakers` array, and each line can enable its own automatic transition delay. It is useful for overhead speech, radio, subtitles, and ambient conversations without occupying the global `Dialogue Manager`.
 
 `Text` is a sequence of dialogue lines shown from top to bottom. The `ContinueDialogue` function:
 
@@ -909,7 +970,7 @@ If there are no responses, `TOPIC` has one normal output. When responses are add
 Response buttons:
 
 - blue `Add` — add a normal response;
-- green `Add Custim` — add a response from the predefined library. Configure it through `ResponseCustomTextList` in the plugin settings;
+- green `Add Custom` — add a response from the predefined library configured through `Response Custom Text List` in plugin settings;
 - red `Add Finish` — add a response that ends the dialogue;
 - in a library, the red button is named `Add Return` and returns control to the calling dialogue;
 - `?` — open the response condition list;
@@ -930,6 +991,8 @@ A terminal response (the finish/return button) is always available, always place
 
 The node executes a list of `UDialogueAction` classes from top to bottom. It should be placed inside a connection:
 
+**Useful when:** dialogue flow must grant an item, change a variable, start a quest, or run other gameplay logic.
+
 ```text
 TOPIC ──► ACTIONS ──► TOPIC
 ```
@@ -944,6 +1007,8 @@ Action parameters marked as instance-editable are shown directly next to the sel
 
 Conditional branching. The node always contains at least two branches.
 
+**Useful when:** the next branch depends on a quest, reputation, inventory item, or another game-state condition.
+
 - branches are evaluated from top to bottom;
 - all conditions inside one branch are combined with logical **AND**;
 - the first branch whose conditions all pass is selected;
@@ -952,11 +1017,27 @@ Conditional branching. The node always contains at least two branches.
 
 The branch name is only an editor label. `?` opens the conditions, `Add` adds a branch, and `-` removes one. For predictable behavior, keep the unconditional branch last.
 
+### RANDOM
+
+Selects one output with equal probability. At least two outputs remain available; when possible, the previous result is not selected again.
+
+**Useful when:** you want random lines, reactions, or some variety in repeated conversations.
+
+### SKIP TEXT
+
+Keeps the current `TOPIC` text visible and immediately shows the next `TOPIC` responses without playing that topic's text, providers, or sounds. The skipped topic is still marked as visited. If it has no responses, it opens normally so flow cannot get stuck.
+
+This node is unavailable in monologue assets.
+
+**Useful when:** a question and its choices should look like one screen even though the choices are stored in a separate topic.
+
 ### TRANSIT
 
 <img width="1032" height="505" alt="transit" src="https://github.com/user-attachments/assets/ee3676d7-0273-4f25-bb9a-3a436b87bf15" />
 
 Calls a `Dialogue Library`. This node is available only in a normal `Dialogue Object`.
+
+**Useful when:** you need reusable fragments such as merchant greetings, tutorials, reputation checks, or standard farewells.
 
 1. Add `TRANSIT`.
 2. Select the library asset in the node field.
@@ -971,20 +1052,31 @@ If no library is assigned or none of its start points match, the library is skip
 
 <img width="1060" height="387" alt="provider" src="https://github.com/user-attachments/assets/3bc42cf6-4de5-4071-9a24-e07e34cda338" />
 
-Calls a `Dialogue Provider`. The node is available only for text and responses inside a `Topic` node.
+Calls a `Dialogue Provider`. Connect it to text or responses inside `TOPIC`, or to `MONOLOGUE` text in a monologue asset.
 
 Allows text to be changed dynamically for both topics and responses.
 
-### FINISH DIALOGUE / RETURN
+**Useful when:** text must include a player name, price, item count, or another runtime value.
+
+### FINISH DIALOGUE / RETURN / FINISH MONOLOGUE
 
 <img width="970" height="531" alt="finish" src="https://github.com/user-attachments/assets/8274bf87-5268-4c5a-b13d-0e4154ef721c" />
 
 A terminal node without a response choice:
 
+**Useful when:** a conversation should automatically end or return from a library after a line, branch, or action sequence.
+
 - `FINISH DIALOGUE` ends a normal dialogue;
+- `FINISH MONOLOGUE` ends local monologue playback;
 - `RETURN` ends a library and returns control to `TRANSIT`.
 
 Use this node when the dialogue should end automatically after a topic, branch, or action sequence. Use `Add Finish` / `Add Return` when the player should explicitly choose a terminal response.
+
+### REROUTE
+
+Redirects a wire without changing runtime behavior. Add it from the wire context menu or by double-clicking a connection.
+
+**Useful when:** you need to keep a large graph readable and reduce crossing wires.
 
 ### Comments and Graph Editing
 
@@ -1105,6 +1197,10 @@ Character-by-character output preserves open Rich Text tags and correctly handle
 ## Connecting Game UI in Blueprint
 
 The plugin intentionally does not provide a ready-made widget. `Dialogue Manager` reports state through events, while the game decides how that state should be displayed.
+
+In short: create a `User Widget` with a `RichTextBlock`, a response container, and a continue button; bind it to manager events before starting, call `Start Dialogue`, and forward clicks to `Continue Dialogue` and `Select Response`.
+
+For monologues, add a `Monologue Component` to the relevant Actor, bind UI to `On Update Role`, `On Update Text`, `On Play Sound`, and `On Monologue Finished`, then call `Start Monologue`. Responses and the global `Dialogue Manager` are not involved.
 
 ### 1. Get the Manager
 

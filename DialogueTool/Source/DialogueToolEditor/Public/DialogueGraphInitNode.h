@@ -48,6 +48,9 @@ public:
 	// Returns the output pin for an initialization entry.
 	UEdGraphPin* GetInitOutputPin(int32 initIndex) const;
 
+	// Returns the required unconditional initialization output pin.
+	UEdGraphPin* GetDefaultOutputPin() const;
+
 	// Adds an empty initialization entry.
 	void AddInit();
 
@@ -65,6 +68,9 @@ public:
 
 	// Changes an initialization condition class.
 	void SetInitConditionClass(int32 initIndex, int32 conditionIndex, const UClass* conditionClass);
+
+	// Changes how initialization conditions are combined.
+	void SetInitConditionMode(int32 InitIndex, EDialogueConditionMode ConditionMode);
 
 private:
 

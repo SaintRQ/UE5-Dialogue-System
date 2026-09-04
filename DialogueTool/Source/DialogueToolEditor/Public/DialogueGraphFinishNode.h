@@ -31,4 +31,7 @@ public:
 
 	// Returns whether this terminal returns from a dialogue library.
 	bool IsReturnNode() const;
+
+	// Returns whether this terminal belongs to a monologue graph.
+	bool IsMonologueNode() const;
 };

@@ -10,6 +10,7 @@
 #include "DialogueObject.h"
 #include "DialogueToolSettings.h"
 #include "EdGraph/EdGraph.h"
+#include "Monologue/MonologueObject.h"
 #include "ScopedTransaction.h"
 
 #define LOCTEXT_NAMESPACE "DialogueGraphNode"
@@ -174,6 +175,7 @@ void UDialogueGraphNode::PostPasteNode()
 		dialogueData.RootSounds.SetNum(dialogueData.RootText.Num());
 		dialogueData.RootTextProviders.SetNum(dialogueData.RootText.Num());
 		dialogueData.RootTextCustomIds.SetNum(dialogueData.RootText.Num());
+		dialogueData.EnsureTextTimingSettings(UMonologueObject::IsMonologueAsset(dialogueObject));
 		for (TObjectPtr<UDialogueProvider>& provider : dialogueData.RootTextProviders)
 		{
 			provider = nullptr;
@@ -343,11 +345,21 @@ void UDialogueGraphNode::DestroyNode()
 
 FText UDialogueGraphNode::GetNodeTitle(ENodeTitleType::Type titleType) const
 {
-	return LOCTEXT("NodeTitle", "TOPIC");
+	return UMonologueObject::IsMonologueAsset(GetDialogueObject())
+		? LOCTEXT("MonologueNodeTitle", "MONOLOGUE")
+		: LOCTEXT("NodeTitle", "TOPIC");
 }
 
 FText UDialogueGraphNode::GetTooltipText() const
 {
+	if (UMonologueObject::IsMonologueAsset(GetDialogueObject()))
+	{
+		return LOCTEXT(
+			"MonologueNodeTooltip",
+			"Displays monologue text entries in order, then continues through its output connection.\n"
+			"Each entry can contain Rich Text, sound, custom text, or a connected Provider.");
+	}
+
 	return LOCTEXT(
 		"NodeTooltip",
 		"Displays the topic text entries in order, then publishes the available responses.\n"
@@ -444,6 +456,22 @@ int64 UDialogueGraphNode::GetPastedFromDialogueNodeId() const
 	return PastedFromDialogueNodeId;
 }
 
+void UDialogueGraphNode::SetRole(const int32 Role)
+{
+	FDialogueNode* dialogueData = GetDialogueData();
+	UDialogueObject* dialogueObject = GetDialogueObject();
+	const int32 role = FMath::Max(0, Role);
+	if (!dialogueData || !dialogueObject || dialogueData->Role == role)
+	{
+		return;
+	}
+
+	const FScopedTransaction transaction(LOCTEXT("SetRole", "Set Dialogue Role"));
+	dialogueObject->Modify();
+	dialogueData->Role = role;
+	NotifyDialogueChanged(false);
+}
+
 void UDialogueGraphNode::FinishCopying()
 {
 	ClipboardDialogueData = FDialogueNode();
@@ -499,6 +527,9 @@ void UDialogueGraphNode::AddRootText(FName customTextId)
 		dialogueData->RootTextCustomIds.Add(customTextId);
 		dialogueData->RootSounds.Add(nullptr);
 		dialogueData->RootTextProviders.Add(nullptr);
+		FMonologueTextSettings& textSettings = dialogueData->MonologueTextSettings.AddDefaulted_GetRef();
+		textSettings.Enabled = UMonologueObject::IsMonologueAsset(GetDialogueObject());
+		textSettings.Initialized = true;
 		NotifyDialogueChanged(true);
 	}
 }
@@ -513,9 +544,11 @@ void UDialogueGraphNode::RemoveRootText(int32 textIndex)
 
 	const FScopedTransaction transaction(LOCTEXT("RemoveRootText", "Remove Dialogue Text"));
 	GetDialogueObject()->Modify();
+	const bool bMonologue = UMonologueObject::IsMonologueAsset(GetDialogueObject());
 	dialogueData->RootSounds.SetNum(dialogueData->RootText.Num());
 	dialogueData->RootTextProviders.SetNum(dialogueData->RootText.Num());
 	dialogueData->RootTextCustomIds.SetNum(dialogueData->RootText.Num());
+	dialogueData->EnsureTextTimingSettings(bMonologue);
 	if (UEdGraphPin* removedProviderPin = GetRootTextProviderInputPin(textIndex))
 	{
 		removedProviderPin->BreakAllPinLinks();
@@ -532,6 +565,7 @@ void UDialogueGraphNode::RemoveRootText(int32 textIndex)
 	dialogueData->RootTextCustomIds.RemoveAt(textIndex);
 	dialogueData->RootSounds.RemoveAt(textIndex);
 	dialogueData->RootTextProviders.RemoveAt(textIndex);
+	dialogueData->MonologueTextSettings.RemoveAt(textIndex);
 	NotifyDialogueChanged(true);
 }
 
@@ -574,6 +608,49 @@ void UDialogueGraphNode::SetRootSound(int32 textIndex, const TSoftObjectPtr<USou
 	GetDialogueObject()->Modify();
 	dialogueData->RootSounds[textIndex] = sound;
 	NotifyDialogueChanged(false);
+}
+
+void UDialogueGraphNode::SetTextTimingEnabled(const int32 TextIndex, const bool Enabled)
+{
+	FDialogueNode* dialogueData = GetDialogueData();
+	UDialogueObject* dialogueObject = GetDialogueObject();
+	if (!dialogueData || !dialogueObject || !dialogueData->RootText.IsValidIndex(TextIndex))
+	{
+		return;
+	}
+
+	dialogueData->EnsureTextTimingSettings(UMonologueObject::IsMonologueAsset(dialogueObject));
+	if (dialogueData->MonologueTextSettings[TextIndex].Enabled == Enabled)
+	{
+		return;
+	}
+
+	const FScopedTransaction transaction(LOCTEXT("SetTextTimingEnabled", "Set Text Timing"));
+	dialogueObject->Modify();
+	dialogueData->MonologueTextSettings[TextIndex].Enabled = Enabled;
+	dialogueObject->MarkPackageDirty();
+}
+
+void UDialogueGraphNode::SetTextDelay(const int32 TextIndex, const float Delay)
+{
+	FDialogueNode* dialogueData = GetDialogueData();
+	UDialogueObject* dialogueObject = GetDialogueObject();
+	if (!dialogueData || !dialogueObject || !dialogueData->RootText.IsValidIndex(TextIndex))
+	{
+		return;
+	}
+
+	dialogueData->EnsureTextTimingSettings(UMonologueObject::IsMonologueAsset(dialogueObject));
+	const float delay = FMath::Max(0.0f, Delay);
+	if (FMath::IsNearlyEqual(dialogueData->MonologueTextSettings[TextIndex].Delay, delay))
+	{
+		return;
+	}
+
+	const FScopedTransaction transaction(LOCTEXT("SetTextDelay", "Set Text Delay"));
+	dialogueObject->Modify();
+	dialogueData->MonologueTextSettings[TextIndex].Delay = delay;
+	dialogueObject->MarkPackageDirty();
 }
 
 void UDialogueGraphNode::AddResponse(FName customTextId)
@@ -813,6 +890,25 @@ void UDialogueGraphNode::SetResponseConditionClass(
 	dialogueData->Response[responseIndex].Conditions[conditionIndex] = conditionClass
 		? NewObject<UDialogueCondition>(dialogueObject, const_cast<UClass*>(conditionClass), NAME_None, RF_Transactional)
 		: nullptr;
+	dialogueObject->MarkPackageDirty();
+}
+
+void UDialogueGraphNode::SetResponseConditionMode(
+	const int32 ResponseIndex,
+	const EDialogueConditionMode ConditionMode)
+{
+	FDialogueNode* dialogueData = GetDialogueData();
+	UDialogueObject* dialogueObject = GetDialogueObject();
+	if (!dialogueData || !dialogueObject || !dialogueData->Response.IsValidIndex(ResponseIndex)
+		|| dialogueData->Response[ResponseIndex].FinishDialogue
+		|| dialogueData->Response[ResponseIndex].ConditionMode == ConditionMode)
+	{
+		return;
+	}
+
+	const FScopedTransaction transaction(LOCTEXT("SetResponseConditionMode", "Set Dialogue Response Condition Mode"));
+	dialogueObject->Modify();
+	dialogueData->Response[ResponseIndex].ConditionMode = ConditionMode;
 	dialogueObject->MarkPackageDirty();
 }
 

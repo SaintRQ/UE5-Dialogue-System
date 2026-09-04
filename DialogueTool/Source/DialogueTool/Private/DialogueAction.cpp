@@ -2,6 +2,6 @@
 
 #include "DialogueAction.h"
 
-void UDialogueAction::ExecuteAction_Implementation(UObject* context)
+void UDialogueAction::ExecuteAction_Implementation(const TArray<UObject*>& Context)
 {
 }

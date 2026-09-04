@@ -5,6 +5,7 @@
 #include "DialogueCondition.h"
 #include "DialogueGraphInitNode.h"
 #include "DialogueGraphNode.h"
+#include "DialogueGraphRandomNode.h"
 #include "DialogueGraphSkipTextNode.h"
 #include "DialogueGraphUtilities.h"
 #include "DialogueGraphTransitNode.h"
@@ -61,8 +62,11 @@ void UDialogueGraphSwitcherNode::AutowireNewNode(UEdGraphPin* fromPin)
 {
 	if (fromPin)
 	{
-		UEdGraphPin* targetPin = fromPin->Direction == EGPD_Output ? GetInputPin() : GetConditionOutputPin(0);
-		GetSchema()->TryCreateConnection(fromPin, targetPin);
+		UEdGraphPin* targetPin = fromPin->Direction == EGPD_Output ? GetInputPin() : GetDefaultOutputPin();
+		if (targetPin)
+		{
+			GetSchema()->TryCreateConnection(fromPin, targetPin);
+		}
 	}
 }
 
@@ -186,9 +190,9 @@ FText UDialogueGraphSwitcherNode::GetTooltipText() const
 {
 	return LOCTEXT(
 		"NodeTooltip",
-		"Selects one outgoing dialogue branch using its condition lists.\n"
-		"Branches are evaluated from top to bottom, and only the first branch whose conditions all pass is used.\n"
-		"That branch's actions execute in order before flow continues through its output.");
+		"Selects the first outgoing dialogue branch whose conditions pass.\n"
+		"Default is used when no conditional branch matches.\n"
+		"The selected branch's actions execute before flow continues through its output.");
 }
 
 FDialogueSwitcher* UDialogueGraphSwitcherNode::GetSwitcherData()
@@ -217,6 +221,14 @@ UEdGraphPin* UDialogueGraphSwitcherNode::GetInputPin() const
 UEdGraphPin* UDialogueGraphSwitcherNode::GetConditionOutputPin(int32 conditionIndex) const
 {
 	return FindPin(GetConditionPinName(conditionIndex), EGPD_Output);
+}
+
+UEdGraphPin* UDialogueGraphSwitcherNode::GetDefaultOutputPin() const
+{
+	const FDialogueSwitcher* switcherData = GetSwitcherData();
+	return switcherData && !switcherData->Conditions.IsEmpty()
+		? GetConditionOutputPin(switcherData->Conditions.Num() - 1)
+		: nullptr;
 }
 
 int64 UDialogueGraphSwitcherNode::GetSwitcherNodeId() const
@@ -270,8 +282,13 @@ void UDialogueGraphSwitcherNode::AddCondition()
 	const FScopedTransaction transaction(LOCTEXT("AddCondition", "Add Switch Condition"));
 	dialogueObject->Modify();
 	Modify();
-	FDialogueSwitcherCondition& condition = switcherData->Conditions.AddDefaulted_GetRef();
-	condition.Name = FName(*FString::Printf(TEXT("Condition %d"), switcherData->Conditions.Num()));
+	const int32 defaultIndex = switcherData->Conditions.Num() - 1;
+	if (UEdGraphPin* defaultPin = GetDefaultOutputPin())
+	{
+		defaultPin->PinName = GetConditionPinName(defaultIndex + 1);
+	}
+	FDialogueSwitcherCondition& condition = switcherData->Conditions.InsertDefaulted_GetRef(defaultIndex);
+	condition.Name = FName(*FString::Printf(TEXT("Condition %d"), switcherData->Conditions.Num() - 1));
 	NotifySwitcherChanged(true);
 }
 
@@ -280,7 +297,8 @@ void UDialogueGraphSwitcherNode::RemoveCondition(int32 conditionIndex)
 	FDialogueSwitcher* switcherData = GetSwitcherData();
 	UDialogueObject* dialogueObject = GetDialogueObject();
 	if (!switcherData || !dialogueObject || switcherData->Conditions.Num() <= 2
-		|| !switcherData->Conditions.IsValidIndex(conditionIndex))
+		|| !switcherData->Conditions.IsValidIndex(conditionIndex)
+		|| conditionIndex == switcherData->Conditions.Num() - 1)
 	{
 		return;
 	}
@@ -383,6 +401,24 @@ void UDialogueGraphSwitcherNode::SetConditionRequirementClass(
 	dialogueObject->MarkPackageDirty();
 }
 
+void UDialogueGraphSwitcherNode::SetConditionMode(
+	const int32 ConditionIndex,
+	const EDialogueConditionMode ConditionMode)
+{
+	FDialogueSwitcher* switcherData = GetSwitcherData();
+	UDialogueObject* dialogueObject = GetDialogueObject();
+	if (!switcherData || !dialogueObject || !switcherData->Conditions.IsValidIndex(ConditionIndex)
+		|| switcherData->Conditions[ConditionIndex].ConditionMode == ConditionMode)
+	{
+		return;
+	}
+
+	const FScopedTransaction transaction(LOCTEXT("SetConditionMode", "Set Switch Condition Mode"));
+	dialogueObject->Modify();
+	switcherData->Conditions[ConditionIndex].ConditionMode = ConditionMode;
+	dialogueObject->MarkPackageDirty();
+}
+
 void UDialogueGraphSwitcherNode::RefreshOutputConnections()
 {
 	for (UEdGraphPin* pin : Pins)
@@ -445,6 +481,10 @@ void UDialogueGraphSwitcherNode::RefreshSourceNodes() const
 				switcherNode && switcherNode != this)
 			{
 				switcherNode->RefreshOutputConnections();
+			}
+			else if (UDialogueGraphRandomNode* randomNode = Cast<UDialogueGraphRandomNode>(node))
+			{
+				randomNode->RefreshOutputConnections();
 			}
 			else if (UDialogueGraphTransitNode* transitNode = Cast<UDialogueGraphTransitNode>(node))
 			{

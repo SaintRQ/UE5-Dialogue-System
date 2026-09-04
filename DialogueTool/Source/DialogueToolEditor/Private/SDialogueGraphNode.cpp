@@ -10,6 +10,7 @@
 #include "DialogueToolSettings.h"
 #include "EdGraph/EdGraph.h"
 #include "Framework/Application/SlateApplication.h"
+#include "Monologue/MonologueObject.h"
 #include "PropertyCustomizationHelpers.h"
 #include "SDialogueAddButton.h"
 #include "SDialogueConditionPopup.h"
@@ -22,6 +23,8 @@
 #include "Styling/AppStyle.h"
 #include "Styling/CoreStyle.h"
 #include "Widgets/Input/SButton.h"
+#include "Widgets/Input/SCheckBox.h"
+#include "Widgets/Input/SNumericEntryBox.h"
 #include "Widgets/Images/SImage.h"
 #include "Widgets/Layout/SBorder.h"
 #include "Widgets/Layout/SBox.h"
@@ -49,8 +52,11 @@ void SDialogueGraphNode::UpdateGraphNode()
 	LeftNodeBox.Reset();
 
 	UDialogueGraphNode* dialogueNode = GetDialogueNode();
+	const TWeakObjectPtr<UDialogueGraphNode> weakNode = dialogueNode;
 	const bool bLibrary = dialogueNode && dialogueNode->GetGraph()
 		&& dialogueNode->GetGraph()->GetTypedOuter<UDialogueLibraryObject>();
+	const bool bMonologue = dialogueNode && dialogueNode->GetGraph()
+		&& UMonologueObject::IsMonologueAsset(dialogueNode->GetGraph()->GetOuter());
 	
 	const FDialogueNode* dialogueData = dialogueNode ? dialogueNode->GetDialogueData() : nullptr;
 	bool bHasProvider = false;
@@ -223,6 +229,25 @@ void SDialogueGraphNode::UpdateGraphNode()
 			[
 				SNew(SButton)
 				.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+				.ContentPadding(2.0f)
+				.ToolTipText(LOCTEXT(
+					"TextTimingTooltip",
+					"Override automatic transition settings for this text entry."))
+				.OnClicked(this, &SDialogueGraphNode::OnOpenTextTiming, textIndex)
+				[
+					SNew(SImage)
+					.Image(FAppStyle::GetBrush("GraphEditor.Timeline_16x"))
+					.ColorAndOpacity(this, &SDialogueGraphNode::GetTextTimingIconColor, textIndex)
+				]
+			];
+
+			textRow->AddSlot()
+			.AutoWidth()
+			.VAlign(VAlign_Center)
+			.Padding(4.0f, 0.0f, 0.0f, 0.0f)
+			[
+				SNew(SButton)
+				.ButtonStyle(FAppStyle::Get(), "SimpleButton")
 				.IsEnabled(dialogueData->RootText.Num() > 1)
 				.ToolTipText(LOCTEXT("RemoveRootTextTooltip", "Remove this text entry."))
 				.OnClicked(this, &SDialogueGraphNode::OnRemoveRootText, textIndex)
@@ -296,6 +321,8 @@ void SDialogueGraphNode::UpdateGraphNode()
 		createSection(textContent, FLinearColor(0.12f, 0.62f, 0.27f, 0))
 	];
 
+	if (!bMonologue)
+	{
 	const int32 responseCount = dialogueData ? dialogueData->Response.Num() : 0;
 	const bool bHasFinishResponse = dialogueData && dialogueData->Response.ContainsByPredicate(
 		[](const FDialogueResponse& response)
@@ -600,6 +627,7 @@ void SDialogueGraphNode::UpdateGraphNode()
 	[
 		addResponseButtons
 	];
+	}
 
 	TSharedRef<SWidget> inputWidget = SNullWidget::NullWidget;
 	if (dialogueNode && dialogueNode->GetInputPin())
@@ -612,6 +640,100 @@ void SDialogueGraphNode::UpdateGraphNode()
 	{
 		outputWidget = CreateDialoguePin(dialogueNode->GetDefaultOutputPin());
 	}
+
+	const TSharedRef<SWidget> roleWidget = SNew(SHorizontalBox)
+
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		.Padding(0.0f, 0.0f, 3.0f, 0.0f)
+		[
+			SNew(STextBlock)
+			.Text(LOCTEXT("RoleLabel", "ROLE"))
+			.Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
+			.ColorAndOpacity(FLinearColor(0.115f, 0.525f, 0.54f))
+		]
+
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		[
+			SNew(SButton)
+			.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+			.ContentPadding(2.0f)
+			.ToolTipText(LOCTEXT("DecreaseRoleTooltip", "Select the previous start context role."))
+			.OnClicked_Lambda([weakNode]()
+			{
+				UDialogueGraphNode* node = weakNode.Get();
+				const FDialogueNode* data = node ? node->GetDialogueData() : nullptr;
+				if (data && data->Role > 0)
+				{
+					node->SetRole(data->Role - 1);
+				}
+				return FReply::Handled();
+			})
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("DecreaseRoleLabel", "-"))
+				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
+				.ColorAndOpacity(FLinearColor(0.115f, 0.525f, 0.54f))
+			]
+		]
+
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		.Padding(2.0f, 0.0f)
+		[
+			SNew(SBox)
+			.WidthOverride(42.0f)
+			[
+				SNew(SNumericEntryBox<int32>)
+				.AllowSpin(false)
+				.MinValue(0)
+				.Justification(ETextJustify::Center)
+				.ToolTipText(LOCTEXT("RoleTooltip", "Index of the pseudo-speaker in the start context array."))
+				.Value_Lambda([weakNode]() -> TOptional<int32>
+				{
+					const UDialogueGraphNode* node = weakNode.Get();
+					const FDialogueNode* data = node ? node->GetDialogueData() : nullptr;
+					return data ? TOptional<int32>(data->Role) : TOptional<int32>();
+				})
+				.OnValueCommitted_Lambda([weakNode](const int32 role, ETextCommit::Type)
+				{
+					if (UDialogueGraphNode* node = weakNode.Get())
+					{
+						node->SetRole(role);
+					}
+				})
+			]
+		]
+
+		+ SHorizontalBox::Slot()
+		.AutoWidth()
+		.VAlign(VAlign_Center)
+		[
+			SNew(SButton)
+			.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+			.ContentPadding(2.0f)
+			.ToolTipText(LOCTEXT("IncreaseRoleTooltip", "Select the next start context role."))
+			.OnClicked_Lambda([weakNode]()
+			{
+				UDialogueGraphNode* node = weakNode.Get();
+				const FDialogueNode* data = node ? node->GetDialogueData() : nullptr;
+				if (data && data->Role < MAX_int32)
+				{
+					node->SetRole(data->Role + 1);
+				}
+				return FReply::Handled();
+			})
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("IncreaseRoleLabel", "+"))
+				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
+				.ColorAndOpacity(FLinearColor(0.115f, 0.525f, 0.54f))
+			]
+		];
 
 	ContentScale.Bind(this, &SGraphNode::GetContentScale);
 	GetOrAddSlot(ENodeZone::Center)
@@ -641,11 +763,20 @@ void SDialogueGraphNode::UpdateGraphNode()
 						SNew(SOverlay)
 
 						+ SOverlay::Slot()
+						.HAlign(HAlign_Left)
+						.VAlign(VAlign_Center)
+						[
+							roleWidget
+						]
+
+						+ SOverlay::Slot()
 						.HAlign(HAlign_Center)
 						.VAlign(VAlign_Center)
 						[
 							SNew(STextBlock)
-							.Text(LOCTEXT("NodeTitle", "TOPIC"))
+							.Text(bMonologue
+								? LOCTEXT("MonologueNodeTitle", "MONOLOGUE")
+								: LOCTEXT("NodeTitle", "TOPIC"))
 							.Font(FCoreStyle::GetDefaultFontStyle("Bold", 12))
 							.ColorAndOpacity(FLinearColor(0.115f, 0.525f, 0.54f))
 							.Justification(ETextJustify::Center)
@@ -766,6 +897,21 @@ FSlateColor SDialogueGraphNode::GetSoundIconColor(bool response, int32 entryInde
 		: FLinearColor(0.5f, 0.53f, 0.58f, 0.4f);
 }
 
+FSlateColor SDialogueGraphNode::GetTextTimingIconColor(const int32 TextIndex) const
+{
+	const UDialogueGraphNode* dialogueNode = GetDialogueNode();
+	const FDialogueNode* dialogueData = dialogueNode ? dialogueNode->GetDialogueData() : nullptr;
+	const bool bDefaultEnabled = dialogueNode && dialogueNode->GetGraph()
+		&& UMonologueObject::IsMonologueAsset(dialogueNode->GetGraph()->GetOuter());
+	const bool enabled = dialogueData && dialogueData->RootText.IsValidIndex(TextIndex)
+		&& (dialogueData->MonologueTextSettings.IsValidIndex(TextIndex)
+			? dialogueData->MonologueTextSettings[TextIndex].Enabled
+			: bDefaultEnabled);
+	return enabled
+		? FLinearColor(1.0f, 0.65f, 0.12f)
+		: FLinearColor(0.5f, 0.53f, 0.58f, 0.4f);
+}
+
 FReply SDialogueGraphNode::OnAddRootText()
 {
 	if (UDialogueGraphNode* dialogueNode = GetDialogueNode())
@@ -880,6 +1026,14 @@ FReply SDialogueGraphNode::OnOpenResponseConditions(int32 responseIndex)
 					? data->Response[responseIndex].Conditions.Num()
 					: 0;
 			})
+			.ConditionMode_Lambda([weakNode, responseIndex]()
+			{
+				const UDialogueGraphNode* node = weakNode.Get();
+				const FDialogueNode* data = node ? node->GetDialogueData() : nullptr;
+				return data && data->Response.IsValidIndex(responseIndex)
+					? data->Response[responseIndex].ConditionMode
+					: EDialogueConditionMode::All;
+			})
 			.OnGetCondition_Lambda([weakNode, responseIndex](int32 conditionIndex) -> UDialogueCondition*
 			{
 				const UDialogueGraphNode* node = weakNode.Get();
@@ -911,6 +1065,13 @@ FReply SDialogueGraphNode::OnOpenResponseConditions(int32 responseIndex)
 				if (UDialogueGraphNode* node = weakNode.Get())
 				{
 					node->RemoveResponseCondition(responseIndex, conditionIndex);
+				}
+			})
+			.OnSetConditionMode_Lambda([weakNode, responseIndex](EDialogueConditionMode conditionMode)
+			{
+				if (UDialogueGraphNode* node = weakNode.Get())
+				{
+					node->SetResponseConditionMode(responseIndex, conditionMode);
 				}
 			}),
 			FSlateApplication::Get().GetCursorPos(),
@@ -996,6 +1157,107 @@ FReply SDialogueGraphNode::OnOpenSound(bool response, int32 entryIndex)
 					.AllowClear(true)
 					.DisplayBrowse(true)
 					.DisplayUseSelected(true)
+				]
+			]
+		],
+		FSlateApplication::Get().GetCursorPos(),
+		FPopupTransitionEffect(FPopupTransitionEffect::ContextMenu));
+
+	return FReply::Handled();
+}
+
+FReply SDialogueGraphNode::OnOpenTextTiming(const int32 TextIndex)
+{
+	UDialogueGraphNode* dialogueNode = GetDialogueNode();
+	const FDialogueNode* dialogueData = dialogueNode ? dialogueNode->GetDialogueData() : nullptr;
+	if (!dialogueData || !dialogueData->RootText.IsValidIndex(TextIndex))
+	{
+		return FReply::Handled();
+	}
+
+	const TWeakObjectPtr<UDialogueGraphNode> weakNode = dialogueNode;
+	const bool bDefaultEnabled = dialogueNode->GetGraph()
+		&& UMonologueObject::IsMonologueAsset(dialogueNode->GetGraph()->GetOuter());
+	const auto getSettings = [weakNode, TextIndex]() -> const FMonologueTextSettings*
+	{
+		const UDialogueGraphNode* node = weakNode.Get();
+		const FDialogueNode* data = node ? node->GetDialogueData() : nullptr;
+		return data && data->MonologueTextSettings.IsValidIndex(TextIndex)
+			? &data->MonologueTextSettings[TextIndex]
+			: nullptr;
+	};
+	FSlateApplication::Get().PushMenu(
+		AsShared(),
+		FWidgetPath(),
+		SNew(SBorder)
+		.BorderImage(FAppStyle::GetBrush("Menu.Background"))
+		.Padding(8.0f)
+		[
+			SNew(SVerticalBox)
+
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(2.0f, 2.0f, 2.0f, 6.0f)
+			[
+				SNew(STextBlock)
+				.Text(LOCTEXT("MonologueTextTimingTitle", "Text Transition"))
+				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
+			]
+
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(2.0f)
+			[
+				SNew(SCheckBox)
+				.IsChecked_Lambda([getSettings, bDefaultEnabled]()
+				{
+					const FMonologueTextSettings* settings = getSettings();
+					return (settings ? settings->Enabled : bDefaultEnabled)
+						? ECheckBoxState::Checked
+						: ECheckBoxState::Unchecked;
+				})
+				.OnCheckStateChanged_Lambda([weakNode, TextIndex](const ECheckBoxState state)
+				{
+					if (UDialogueGraphNode* node = weakNode.Get())
+					{
+						node->SetTextTimingEnabled(TextIndex, state == ECheckBoxState::Checked);
+					}
+				})
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("MonologueTextTimingEnabled", "Enabled"))
+				]
+			]
+
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(2.0f)
+			[
+				SNew(SNumericEntryBox<float>)
+				.MinValue(0.0f)
+				.AllowSpin(false)
+				.MinDesiredValueWidth(100.0f)
+				.IsEnabled_Lambda([getSettings, bDefaultEnabled]()
+				{
+					const FMonologueTextSettings* settings = getSettings();
+					return settings ? settings->Enabled : bDefaultEnabled;
+				})
+				.Value_Lambda([getSettings]() -> TOptional<float>
+				{
+					const FMonologueTextSettings* settings = getSettings();
+					return settings ? settings->Delay : MonologueDefaultTextDelay;
+				})
+				.OnValueCommitted_Lambda([weakNode, TextIndex](const float delay, ETextCommit::Type)
+				{
+					if (UDialogueGraphNode* node = weakNode.Get())
+					{
+						node->SetTextDelay(TextIndex, delay);
+					}
+				})
+				.Label()
+				[
+					SNew(STextBlock)
+					.Text(LOCTEXT("MonologueTextTimingDelay", "Delay (s)"))
 				]
 			]
 		],

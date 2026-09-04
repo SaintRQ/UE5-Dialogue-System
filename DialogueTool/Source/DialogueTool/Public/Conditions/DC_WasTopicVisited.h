@@ -15,5 +15,5 @@ class DIALOGUETOOL_API UDC_WasTopicVisited final : public UDialogueCondition
 public:
 
 	// Checks the previous-visit state of the topic containing this response.
-	virtual bool ExecuteCondition_Implementation(UObject* context) const override;
+	virtual bool ExecuteCondition_Implementation(const TArray<UObject*>& Context) const override;
 };

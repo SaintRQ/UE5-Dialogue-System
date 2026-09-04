@@ -5,6 +5,8 @@
 #include "AssetRegistry/AssetData.h"
 #include "DialogueGraphTransitNode.h"
 #include "DialogueLibraryObject.h"
+#include "Monologue/MonologueLibraryObject.h"
+#include "Monologue/MonologueObject.h"
 #include "PropertyCustomizationHelpers.h"
 #include "SDialogueGraphInitStatus.h"
 #include "SGraphPanel.h"
@@ -38,6 +40,8 @@ void SDialogueGraphTransitNode::UpdateGraphNode()
 	LeftNodeBox.Reset();
 
 	UDialogueGraphTransitNode* transitNode = GetTransitNode();
+	const bool bMonologue = transitNode && transitNode->GetGraph()
+		&& UMonologueObject::IsMonologueAsset(transitNode->GetGraph()->GetOuter());
 	TSharedRef<SWidget> inputWidget = SNullWidget::NullWidget;
 	TSharedRef<SWidget> outputWidget = SNullWidget::NullWidget;
 	if (transitNode)
@@ -118,7 +122,13 @@ void SDialogueGraphTransitNode::UpdateGraphNode()
 						.WidthOverride(280.0f)
 						[
 							SNew(SObjectPropertyEntryBox)
-							.AllowedClass(UDialogueLibraryObject::StaticClass())
+							.AllowedClass(bMonologue
+								? UMonologueLibraryObject::StaticClass()
+								: UDialogueLibraryObject::StaticClass())
+							.OnShouldFilterAsset_Lambda([bMonologue](const FAssetData& assetData)
+							{
+								return bMonologue != assetData.IsInstanceOf<UMonologueLibraryObject>();
+							})
 							.ObjectPath(this, &SDialogueGraphTransitNode::GetDialogueLibraryPath)
 							.OnObjectChanged(this, &SDialogueGraphTransitNode::OnDialogueLibraryChanged)
 							.AllowClear(true)

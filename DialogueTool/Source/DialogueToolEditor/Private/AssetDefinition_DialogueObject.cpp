@@ -14,7 +14,7 @@ FText UAssetDefinition_DialogueObject::GetAssetDisplayName() const
 
 FLinearColor UAssetDefinition_DialogueObject::GetAssetColor() const
 {
-	return FLinearColor::White;
+	return FLinearColor(0.04f, 0.34f, 0.92f);
 }
 
 TSoftClassPtr<UObject> UAssetDefinition_DialogueObject::GetAssetClass() const
